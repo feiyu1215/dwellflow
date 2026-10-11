@@ -1,0 +1,292 @@
+<view class="page issue-page">
+  <view wx:if="{{!selected}}" class="issue-index">
+    <view class="issue-topbar"><view class="topbar-space"></view><view class="topbar-title">问题工作台</view><view class="topbar-space"></view></view>
+    <view class="issue-heading">
+      <view class="eyebrow">一个负责人最终确认</view>
+      <view class="title">问题与整改</view>
+      <view class="subtitle">{{hasProject ? projectName + ' · 先固定事实，再选择预案、记录处理并由负责人复查。' : '先创建项目，再记录问题和处理过程。'}}</view>
+      <view wx:if="{{originLabel}}" class="origin-context"><view></view><text>{{originLabel}}</text></view>
+      <button wx:if="{{hasProject && !readOnly}}" class="primary issue-create" bindtap="openCreate">记录新问题</button>
+    </view>
+    <view wx:if="{{hasProject && readOnly}}" class="readonly-banner">项目已归档：仍可查看问题、预案和复查记录，所有处理动作已暂停。</view>
+
+  <view wx:if="{{!hasProject}}" class="no-project card">
+    <view class="empty-title">还没有可处理的项目</view>
+    <view class="meta">创建项目后，可以直接建问题，也可以从一条现场记录转成问题。</view>
+    <button class="primary no-project-button" bindtap="manageProject">创建项目</button>
+  </view>
+
+  <view wx:if="{{hasProject}}" class="issue-overview">
+    <view><view class="overview-number">{{issueCounts.active}}</view><view class="meta">进行中</view></view>
+    <view><view class="overview-number review-number">{{issueCounts.review}}</view><view class="meta">待复查</view></view>
+    <view><view class="overview-number muted-number">{{issueCounts.closed}}</view><view class="meta">已关闭</view></view>
+  </view>
+  <view wx:if="{{hasProject}}" class="issue-tabs">
+    <view class="issue-tab {{issueFilter === 'active' ? 'issue-tab-active' : ''}}" data-filter="active" bindtap="setIssueFilter">进行中</view>
+    <view class="issue-tab {{issueFilter === 'all' ? 'issue-tab-active' : ''}}" data-filter="all" bindtap="setIssueFilter">全部记录</view>
+  </view>
+
+  <view wx:if="{{hasProject && visibleIssues.length}}" class="issue-list">
+    <view class="card issue-card interactive-card" wx:for="{{visibleIssues}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+      <view class="row">
+        <view class="item-title">{{item.title}}</view>
+        <view class="{{item.statusClass}}">{{item.statusLabel}}</view>
+      </view>
+      <view class="meta item-meta">{{item.location}}</view>
+      <view class="meta item-meta">{{item.schedule}}</view>
+      <view class="card-summary">{{item.description}}</view>
+      <view class="flow-summary">
+        <text>{{item.proposalCount}} 个预案</text>
+        <text>·</text>
+        <text>{{item.treatments.length}} 次处理</text>
+        <text>·</text>
+        <text>{{item.reviews.length}} 次复查</text>
+      </view>
+      <view class="next-action"><text>下一步</text><text>{{item.nextActionLabel}}</text></view>
+    </view>
+  </view>
+  <view wx:elif="{{hasProject}}" class="empty card">
+    <view class="empty-title">{{issueFilter === 'active' && issueCounts.closed ? '进行中的事项已经处理完' : '还没有问题事项'}}</view>
+    <view class="meta">{{issueFilter === 'active' && issueCounts.closed ? '可以切换到“全部记录”查阅关闭过程。' : '发现现场问题后可直接新建，也可以从记录页关联创建。'}}</view>
+  </view>
+  </view>
+
+  <view wx:if="{{selected}}" class="issue-workbench">
+      <view class="issue-topbar"><view class="back-link" bindtap="backFromIssue">‹ 返回</view><view class="topbar-title">问题详情</view><view class="topbar-space"></view></view>
+      <view class="issue-object-head">
+        <view class="identity-row"><view class="issue-identity">{{selected.id}} · {{selected.versionLabel}}</view><view class="{{selected.statusClass}}">{{selected.statusLabel}}</view></view>
+        <view class="section-title issue-title">{{selected.title}}</view>
+        <view class="issue-lede">页面先固定可观察事实；原因、责任和是否合格都不写入事实字段。</view>
+        <view class="source-chips head-source-chips"><view class="source-chip">{{selected.location}}</view><view class="source-chip">{{selected.schedule}}</view></view>
+        <view class="progress-rail issue-progress-rail"><view class="progress-step {{item.state}}" wx:for="{{selected.processSteps}}" wx:key="label"></view></view>
+      </view>
+
+      <view wx:if="{{selected.canAddProposal && !readOnly}}" class="task-capsule issue-task-capsule" bindtap="openAiProposal">
+        <view class="task-orbit"><view class="task-orbit-ring"></view><view class="task-orbit-dot"></view></view><view class="task-copy"><view class="task-title">AI 可整理可比较的处理预案</view><view class="task-note">只生成待选版本，不采用方案或通知施工方</view></view><view class="task-link">查看范围</view>
+      </view>
+      <view wx:if="{{selected.canReview && !readOnly}}" class="task-capsule issue-task-capsule" bindtap="openAiReviewReference">
+        <view class="task-orbit"><view class="task-orbit-ring"></view><view class="task-orbit-dot"></view></view><view class="task-copy"><view class="task-title">AI 可整理复查清单与限制</view><view class="task-note">区分可见变化与仍需现场核实的事项</view></view><view class="task-link">查看范围</view>
+      </view>
+
+      <view class="fact-card fact-evidence-card">
+        <view class="fact-evidence" data-id="{{selected.primaryEvidence ? selected.primaryEvidence.id : ''}}" bindtap="openEvidence">
+          <image wx:if="{{selected.primaryEvidence && selected.primaryEvidence.previewPath}}" class="fact-evidence-image" src="{{selected.primaryEvidence.previewPath}}" mode="aspectFill" />
+          <view wx:else class="fact-evidence-placeholder"><view class="fact-placeholder-mark"></view><text>{{selected.primaryEvidence ? '原件已关联，当前格式不可预览' : '尚未关联一等证据原件'}}</text></view>
+          <view class="fact-evidence-overlay"><view class="fact-evidence-title">{{selected.location}}</view><view class="fact-evidence-meta">{{selected.primaryEvidence ? selected.primaryEvidence.id + ' · ' + selected.primaryEvidence.meta : selected.factSourceLabel}}</view><view wx:if="{{selected.primaryEvidence}}" class="fact-evidence-open">查看原件 ›</view></view>
+        </view>
+        <view class="fact-body">
+          <view class="fact-heading"><text class="fact-label">观察事实</text><text class="fact-kind">{{selected.factSourceLabel}}</text></view>
+          <view class="fact-quote">{{selected.description}}</view>
+          <view class="source-chips"><view class="source-chip">提出来源：{{selected.factSourceLabel}}</view><view class="source-chip">位置：{{selected.location}}</view></view>
+          <view class="fact-boundary">原因、责任和是否合格未由本事实字段确认。</view>
+        </view>
+        <view wx:if="{{selected.evidence.length > 1}}" class="evidence-mini-list">
+          <view class="evidence-mini evidence-link" wx:for="{{selected.evidence}}" wx:key="id" data-id="{{item.id}}" bindtap="openEvidence">
+            <view class="evidence-mini-name">{{item.label}}</view><view class="meta">{{item.id}} · {{item.meta}} · 查看原件 ›</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-block-title process-title"><view><view class="eyebrow">问题生命周期</view><view class="section-title">处理轨迹</view></view><view class="section-count">状态由正式动作推进</view></view>
+      <view class="process-rail process-rail-vertical">
+          <view class="process-step process-step-{{item.state}}" wx:for="{{selected.processSteps}}" wx:key="label">
+            <view class="process-dot">{{item.state === 'done' ? '✓' : index + 1}}</view>
+            <view class="process-copy"><view class="process-label">{{item.label}}</view><view class="process-hint">{{item.hint}}</view></view>
+          </view>
+      </view>
+
+      <view class="current-step-panel">
+        <view class="current-step-kicker">当前环节</view>
+        <view wx:if="{{selected.status === 'pending_confirmation'}}" class="current-step-title">比较预案，由负责人选定执行版本</view>
+        <view wx:elif="{{selected.status === 'pending_action'}}" class="current-step-title">按生效预案记录实际处理</view>
+        <view wx:elif="{{selected.status === 'pending_review'}}" class="current-step-title">核对处理依据，由负责人退回或关闭</view>
+        <view wx:else class="current-step-title">事项已关闭，完整历史仍可追溯</view>
+        <view class="current-step-note">AI、监管意见和参与者建议都不会自动改变问题状态。</view>
+      </view>
+
+      <view wx:if="{{selected.status === 'pending_review' && selected.latestTreatment}}" class="current-record">
+        <view class="record-type">本轮处理记录</view>
+        <view class="record-title">{{selected.latestTreatment.note || '通过关联资料说明处理结果'}}</view>
+        <view class="meta">引用预案 {{selected.latestTreatment.activeProposalId}} · {{selected.latestTreatment.evidenceLabel}} · {{selected.latestTreatment.timeLabel}}</view>
+      </view>
+      <view wx:if="{{selected.status === 'closed' && selected.latestReview}}" class="current-record closed-record">
+        <view class="record-type">负责人最终决定</view>
+        <view class="record-title">{{selected.latestReview.decisionLabel}} · {{selected.latestReview.note}}</view>
+        <view class="meta">{{selected.latestReview.methodLabel}}<text wx:if="{{selected.latestReview.closeReasonLabel}}"> · {{selected.latestReview.closeReasonLabel}}</text> · {{selected.latestReview.timeLabel}}</view>
+      </view>
+
+      <view wx:if="{{selected.activeProposalText}}" class="active-plan">
+        <view class="eyebrow">当前执行预案</view>
+        <view class="active-plan-text">{{selected.activeProposalText}}</view>
+        <view class="proposal-ref">引用 {{selected.activeProposalRef}}</view>
+      </view>
+
+      <block wx:if="{{selected.status === 'pending_confirmation'}}">
+      <view class="section-block-title"><view><view class="eyebrow">预案版本</view><view class="section-title">比较后再决定</view></view><view class="section-count">{{selected.proposalCount}} 份</view></view>
+      <view wx:if="{{selected.proposals.length}}" class="proposal-list">
+        <view class="proposal" wx:for="{{selected.proposals}}" wx:key="id">
+          <view class="row">
+            <view>
+              <view class="proposal-version">{{item.versionLabel}}</view>
+              <view class="meta">{{item.id}} · {{item.authorLabel}} · {{item.timeLabel}}</view>
+            </view>
+            <view class="proposal-status {{item.status === 'active' ? 'proposal-status-active' : ''}}">{{item.statusLabel}}</view>
+          </view>
+          <view class="proposal-content">{{item.content}}</view>
+          <view wx:if="{{item.decisionReason}}" class="decision-reason">替换依据：{{item.decisionReason}}</view>
+          <button wx:if="{{item.canSelect && !readOnly}}" class="secondary mini-button" data-id="{{item.id}}" bindtap="selectProposal">负责人采用</button>
+        </view>
+      </view>
+      <view wx:else class="inline-empty">还没有预案，先填写一个可执行的处理办法。</view>
+
+      <view wx:if="{{selected.canAddProposal && !readOnly}}" class="entry-block">
+        <textarea class="textarea" value="{{proposalText}}" bindinput="onProposal" placeholder="填写处理步骤、责任人或完成标准" />
+        <button class="secondary" bindtap="submitProposal">提交处理预案</button>
+      </view>
+      </block>
+
+      <view class="history-toggle" bindtap="toggleHistory"><view><view class="section-title">完整过程记录</view><view class="meta">预案、处理、复查与重新打开均保留版本</view></view><view class="toggle-mark {{showHistory ? 'open' : ''}}">⌄</view></view>
+      <view wx:if="{{showHistory}}" class="history-section">
+        <block wx:if="{{selected.status !== 'pending_confirmation'}}">
+          <view class="history-subtitle">预案版本</view>
+          <view class="proposal history-proposal" wx:for="{{selected.proposals}}" wx:key="id">
+            <view class="row"><view><view class="proposal-version">{{item.versionLabel}}</view><view class="meta">{{item.id}} · {{item.authorLabel}} · {{item.timeLabel}}</view></view><view class="proposal-status {{item.status === 'active' ? 'proposal-status-active' : ''}}">{{item.statusLabel}}</view></view>
+            <view class="proposal-content">{{item.content}}</view>
+            <view wx:if="{{item.decisionReason}}" class="decision-reason">替换依据：{{item.decisionReason}}</view>
+            <button wx:if="{{item.canSelect && !readOnly}}" class="secondary mini-button" data-id="{{item.id}}" bindtap="selectProposal">负责人采用</button>
+          </view>
+          <view wx:if="{{selected.canAddProposal && !readOnly}}" class="entry-block history-entry">
+            <textarea class="textarea" value="{{proposalText}}" bindinput="onProposal" placeholder="补充新的处理预案；已有执行版本不会被自动替换" />
+            <button class="secondary" bindtap="submitProposal">提交备选预案</button>
+          </view>
+        </block>
+        <view class="history-subtitle">处理与复查记录</view>
+        <view class="history-item" wx:for="{{selected.treatments}}" wx:key="id">
+          <view class="history-dot"></view>
+          <view class="history-body">
+            <view class="row"><view class="history-title">提交处理结果</view><view class="meta">{{item.timeLabel}}</view></view>
+            <view class="history-note">{{item.note || '通过关联资料说明'}}</view>
+            <view class="meta">执行预案：{{item.activeProposalId}} · {{item.evidenceLabel}}</view>
+          </view>
+        </view>
+        <view class="history-item" wx:for="{{selected.reviews}}" wx:key="id">
+          <view class="history-dot review-dot"></view>
+          <view class="history-body">
+            <view class="row"><view class="history-title">负责人复查 · {{item.decisionLabel}}</view><view class="meta">{{item.timeLabel}}</view></view>
+            <view class="history-note">{{item.note}}</view>
+            <view class="meta">方式：{{item.methodLabel}}<text wx:if="{{item.closeReasonLabel}}"> · {{item.closeReasonLabel}}</text></view>
+          </view>
+        </view>
+        <view class="history-item" wx:for="{{selected.reopenings}}" wx:key="id">
+          <view class="history-dot reopen-dot"></view>
+          <view class="history-body">
+            <view class="row"><view class="history-title">重新打开</view><view class="meta">{{item.timeLabel}}</view></view>
+            <view class="history-note">{{item.reason}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{!readOnly}}" class="sticky-actions">
+        <button wx:if="{{selected.canAddProposal}}" class="secondary" bindtap="openAiProposal">AI 整理处理预案</button>
+        <button wx:if="{{selected.canTreat}}" class="primary" bindtap="openTreatment">提交处理结果</button>
+        <button wx:if="{{selected.canReview}}" class="secondary" bindtap="openAiReviewReference">AI 生成复查参考</button>
+        <button wx:if="{{selected.canReview}}" class="primary" bindtap="openReview">负责人复查</button>
+        <button wx:if="{{selected.canReopen}}" class="secondary" bindtap="openReopen">重新打开事项</button>
+      </view>
+  </view>
+
+  <view wx:if="{{showAction && !readOnly}}" class="sheet-mask action-mask" bindtap="closeAction">
+    <view class="sheet action-sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeAction">关闭</view></view>
+
+      <block wx:if="{{showAction === 'create'}}">
+        <view class="section-title">新建问题事项</view>
+        <view wx:if="{{originLabel}}" class="origin-context form-origin"><view></view><text>{{originLabel}} · 已自动带入位置</text></view>
+        <view class="field-label">事项标题</view>
+        <input class="input" value="{{createTitle}}" bindinput="onCreateTitle" placeholder="例如：卫生间墙砖空鼓待确认" />
+        <view class="field-label">发现了什么</view>
+        <textarea class="textarea" value="{{createDescription}}" bindinput="onCreateDescription" placeholder="描述现象、位置及需要确认的原因" />
+        <view class="form-grid">
+          <view>
+            <view class="field-label">房间</view>
+            <picker mode="selector" range="{{rooms}}" value="{{createRoomIndex}}" bindchange="onCreateRoom"><view class="picker-value">{{rooms[createRoomIndex]}}</view></picker>
+          </view>
+          <view>
+            <view class="field-label">工序</view>
+            <picker mode="selector" range="{{stages}}" value="{{createStageIndex}}" bindchange="onCreateStage"><view class="picker-value">{{stages[createStageIndex]}}</view></picker>
+          </view>
+        </view>
+        <view class="form-grid">
+          <view>
+            <view class="field-label">执行人（可空）</view>
+            <input class="input" value="{{createAssignee}}" bindinput="onCreateAssignee" placeholder="姓名或角色" />
+          </view>
+          <view>
+            <view class="field-label">截止日期（可空）</view>
+            <picker mode="date" value="{{createDueDate}}" bindchange="onCreateDueDate"><view class="picker-value">{{createDueDate || '暂不设置'}}</view></picker>
+          </view>
+        </view>
+        <view class="form-tip">创建后先收集处理预案，由项目负责人选择执行方案。</view>
+        <button class="primary" bindtap="submitCreate">创建事项</button>
+      </block>
+
+      <block wx:elif="{{showAction === 'replace'}}">
+        <view class="section-title">替换执行预案</view>
+        <view class="form-tip">已有预案正在执行。替换会保留旧版本，并记录本次更改依据。</view>
+        <view class="field-label">替换原因</view>
+        <textarea class="textarea" value="{{replacementReason}}" bindinput="onReplacementReason" placeholder="例如：现场条件变化，原方案无法施工" />
+        <button class="primary" bindtap="confirmReplacement">确认替换</button>
+      </block>
+
+      <block wx:elif="{{showAction === 'treatment'}}">
+        <view class="section-title">提交处理结果</view>
+        <view class="field-label">处理说明</view>
+        <textarea class="textarea" value="{{treatmentNote}}" bindinput="onTreatmentNote" placeholder="说明做了什么、结果如何；也可只关联一条现场记录" />
+        <view class="field-label">关联证据</view>
+        <picker mode="selector" range="{{evidenceOptions}}" range-key="label" value="{{evidenceIndex}}" bindchange="onEvidence">
+          <view class="picker-value">{{evidenceOptions[evidenceIndex].label || '请选择记录'}}</view>
+        </picker>
+        <button class="primary" bindtap="submitTreatment">提交负责人复查</button>
+      </block>
+
+      <block wx:elif="{{showAction === 'review'}}">
+        <view class="section-title">负责人复查</view>
+        <view class="field-label">复查方式</view>
+        <picker mode="selector" range="{{reviewMethods}}" range-key="label" value="{{reviewMethodIndex}}" bindchange="onReviewMethod">
+          <view class="picker-value">{{reviewMethods[reviewMethodIndex].label}}</view>
+        </picker>
+        <view class="field-label">复查结论</view>
+        <picker mode="selector" range="{{reviewDecisions}}" range-key="label" value="{{reviewDecisionIndex}}" bindchange="onReviewDecision">
+          <view class="picker-value">{{reviewDecisions[reviewDecisionIndex].label}}</view>
+        </picker>
+        <block wx:if="{{reviewDecisionIndex == 1}}">
+          <view class="field-label">关闭原因</view>
+          <picker mode="selector" range="{{closeReasons}}" range-key="label" value="{{closeReasonIndex}}" bindchange="onCloseReason">
+            <view class="picker-value">{{closeReasons[closeReasonIndex].label}}</view>
+          </picker>
+          <block wx:if="{{closeReasonIndex == 2}}">
+            <view class="field-label">关联主事项</view>
+            <picker wx:if="{{duplicateOptions.length}}" mode="selector" range="{{duplicateOptions}}" range-key="label" value="{{duplicateIndex}}" bindchange="onDuplicate">
+              <view class="picker-value">{{duplicateOptions[duplicateIndex].label}}</view>
+            </picker>
+            <view wx:else class="form-tip form-warning">没有其他事项可关联，请选择其他关闭原因。</view>
+          </block>
+        </block>
+        <view class="field-label">实际复查依据</view>
+        <textarea class="textarea" value="{{reviewNote}}" bindinput="onReviewNote" placeholder="填写看到的结果和作出结论的依据" />
+        <button class="primary" bindtap="submitReview">提交复查结论</button>
+      </block>
+
+      <block wx:elif="{{showAction === 'reopen'}}">
+        <view class="section-title">重新打开事项</view>
+        <view class="form-tip">关闭记录会保留，事项回到待处理状态。</view>
+        <view class="field-label">重新打开原因</view>
+        <textarea class="textarea" value="{{reopenReason}}" bindinput="onReopenReason" placeholder="例如：复查后再次出现同类问题" />
+        <button class="primary" bindtap="submitReopen">确认重新打开</button>
+      </block>
+
+      <button class="text-button" bindtap="closeAction">取消</button>
+    </view>
+  </view>
+  <ai-assistant wx:if="{{hasProject && !showAction}}" project-id="{{projectId}}" project-name="{{projectName}}" context-type="issue" context-label="{{selected ? selected.title : '问题工作台'}}" object-id="{{selected ? selected.id : ''}}" issue-id="{{selected ? selected.id : ''}}" issue-status="{{selected ? selected.status : ''}}"></ai-assistant>
+</view>

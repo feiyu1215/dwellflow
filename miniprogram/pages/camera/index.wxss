@@ -1,0 +1,16 @@
+.readiness { padding-bottom: 12rpx; }
+.check-row { display: flex; gap: 18rpx; align-items: flex-start; padding: 16rpx 0; }
+.check-dot { width: 22rpx; height: 22rpx; border-radius: 50%; margin-top: 8rpx; flex: none; }
+.check-dot.pending { background: var(--amber); box-shadow: 0 0 0 8rpx var(--warning-soft); }
+.block-title { margin-top: 34rpx; }
+.block-title .section-title { margin-bottom: 0; }
+.item-title { font-weight: 720; }
+.item-meta { margin-top: 8rpx; }
+.missing { background: var(--warning-soft); color: var(--warning); border-radius: 14rpx; padding: 16rpx; margin-top: 20rpx; font-size: 24rpx; line-height: 1.55; }
+.button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 20rpx; }
+.small-button { margin: 0; font-size: 24rpx; line-height: 68rpx; }
+.scope-note { margin-top: 32rpx; }
+.scope-note .section-title { margin-bottom: 10rpx; }
+.provider-description { line-height: 1.65; margin: -8rpx 0 10rpx; }
+.provider-mode { color: var(--muted); font-size: 24rpx; }
+.source-link { color: var(--green); font-weight: 650; margin: 14rpx 0 28rpx; }

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>装修同步 · Interaction Loop 可交互验证</title>
+<style>
+:root{
+  --paper:#F4F3EE; --card:#FBFAF6; --ink:#1B1A18; --ink2:#57544C; --ink3:#8B877B;
+  --line:#D9D6CC; --line2:#C2BEAF; --accent:#A2471F; --accent-s:#F2E5DC;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 26px 90px}
+
+header{padding:60px 0 30px;border-bottom:1px solid var(--line2)}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase}
+h1{font-size:34px;font-weight:600;letter-spacing:-.02em;margin:12px 0 8px;line-height:1.2}
+.lede{font-size:16px;color:var(--ink2);max-width:680px;margin:0}
+.std{margin:26px 0 0;padding:16px 20px;background:var(--card);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;font-size:15px}
+.std b{color:var(--accent);font-weight:600}
+
+.rowtop{display:grid;grid-template-columns:1fr 330px;gap:26px;margin-top:34px;align-items:start}
+@media(max-width:900px){.rowtop{grid-template-columns:1fr}}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.ph{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase;margin-bottom:12px}
+
+/* terrain */
+.terrain{position:relative;padding:6px 0 4px}
+.row{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:center;margin-bottom:6px}
+.slabel{font-size:12px;color:var(--ink2);text-align:right;transition:all .45s cubic-bezier(.2,.7,.2,1)}
+.slabel.cur{color:var(--accent);font-weight:600}
+.cells{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.node{height:44px;border:1px solid var(--line);border-radius:7px;background:#fff;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;
+  transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .4s ease,background .35s ease,border-color .35s ease}
+.node:hover{border-color:var(--line2)}
+.node .n{font-family:var(--mono);font-size:13px;line-height:1}
+.node .l{font-size:9px;color:var(--ink3);letter-spacing:.04em}
+.node.empty .n{color:var(--line2)}
+.node.past{border-left:2px solid var(--ink3)}
+.node.current{border-bottom:2px solid var(--accent)}
+.node.state-upcoming .n{color:var(--ink3)}
+
+/* recede */
+.recede .node{opacity:.2;transform:scale(.82)}
+.recede .row.samecol .node,.recede .node.adj{opacity:.42}
+.node.focus{opacity:1;transform:scale(1.22);border-color:var(--accent);background:var(--accent-s);z-index:3;
+  box-shadow:0 0 0 3px rgba(162,71,31,.08)}
+.node.focus .n{color:var(--accent)}
+.slabel.dimmed{opacity:.35}
+
+/* reading */
+.rd{position:sticky;top:20px}
+.focusline{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.08em;margin-bottom:2px}
+.ftitle{font-size:19px;font-weight:600;letter-spacing:-.01em;margin-bottom:3px;transition:opacity .3s}
+.fmeta{font-size:12px;color:var(--ink3);margin-bottom:14px}
+.sect{margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.sect .sh{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink3);text-transform:uppercase;margin-bottom:8px}
+.chg{font-size:9px;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 3px;margin-left:5px;letter-spacing:.05em}
+.peek{font-size:12.5px;color:var(--ink2);line-height:1.65}
+.peek li{margin-bottom:3px;list-style:none;padding-left:12px;position:relative}
+.peek li::before{content:"−";position:absolute;left:0;color:var(--ink3)}
+.peek ul{margin:0;padding:0}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.act{border:1px solid var(--line2);background:#fff;border-radius:20px;padding:5px 11px;font-size:12px;cursor:pointer;
+  transition:all .25s ease}
+.act:hover{border-color:var(--accent);color:var(--accent)}
+.act.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.act.primary:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.ai{background:#fff;border:1px solid var(--line2);border-left:3px solid var(--accent);border-radius:0 7px 7px 0;padding:10px 12px}
+.ai .an{font-size:13.5px;font-weight:600;margin-bottom:3px}
+.ai .ad{font-size:12px;color:var(--ink2);line-height:1.55}
+.aitem{opacity:0;animation:rise .45s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.blocked{font-size:11px;color:var(--ink3);font-style:italic}
+
+/* loop footer */
+.loop{margin-top:30px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.looph{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase;margin-bottom:14px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.step{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#fff;transition:all .4s ease}
+.step .sn{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.1em}
+.step .st{font-size:13.5px;font-weight:600;margin:4px 0 3px}
+.step .sd{font-size:12px;color:var(--ink2);line-height:1.5}
+.step.live{border-color:var(--accent);background:var(--accent-s)}
+.step.live .sd{color:var(--ink)}
+.hintline{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+.hintline b{color:var(--accent)}
+
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kick">Interaction Loop · v2</div>
+  <h1>装修同步 · 由语义驱动的连续交互</h1>
+  <p class="lede">不先谈空间，也照做。核心是把每一个「焦点」绑到<b>它当下真正能做的事</b>上——这才是拉住整个产品的那一根筋。</p>
+  <div class="std">用户做了一件事 → 产品立即回应 → <b>回应本身改变下一步可以做什么</b>。<br>判断线：<span style="color:var(--ink3)">Hover 高亮是微互动；拖入焦点后「其他区域退场 + 内容按语义重组 + 可执行动作改变 + AI 提议改变」才是真互动。</span></div>
+</header>
+
+<div class="rowtop">
+  <div class="panel">
+    <div class="ph">Terrain / 7 工序 × 6 模块　点任意一个点位</div>
+    <div class="terrain" id="terrain"></div>
+  </div>
+
+  <div class="panel rd">
+    <div class="ph">Reading / 由焦点决定</div>
+    <div id="reading"></div>
+  </div>
+</div>
+
+<div class="loop">
+  <div class="looph">Loop 状态 · 当前轮次</div>
+  <div class="steps" id="steps"></div>
+  <div class="hintline" id="hint"></div>
+</div>
+
+<footer>
+  v2 相对上一版的变化：空间的地位从<b>核心降为可选载体</b>。Terrain 只是承载焦点的一个方式；真正的产品结构是从上面这份 18 组语义里长出来的。<br>
+  面板第一个动作按钮是为了让 loop 闭合——业务动作会<u>改变场的条件</u>，从而改变下一步 AI 能提议什么。这才是完整的一圈。尚未动任何源码。
+</footer>
+
+</div>
+
+<script>
+const STAGES=[
+ {n:'设计',s:'past'},{n:'拆改',s:'past'},{n:'水电',s:'current'},
+ {n:'泥木',s:'upcoming'},{n:'油漆',s:'upcoming'},{n:'安装',s:'upcoming'},{n:'收尾',s:'upcoming'}];
+const MODULES=['记录','约定','材料','费用','问题','证据'];
+
+let counts={
+ '0,0':6,'0,1':2,'0,2':0,'0,3':3,'0,4':1,'0,5':9,
+ '1,0':4,'1,1':1,'1,2':3,'1,3':4,'1,4':2,'1,5':5,
+ '2,0':12,'2,1':3,'2,2':8,'2,3':5,'2,4':4,'2,5':14,
+ '3,0':0,'3,1':1,'3,2':2,'3,3':1,'3,4':0,'3,5':0,
+ '4,0':0,'4,1':0,'4,2':1,'4,3':0,'4,4':0,'4,5':0,
+ '5,0':0,'5,1':0,'5,2':0,'5,3':0,'5,4':0,'5,5':0,
+ '6,0':0,'6,1':0,'6,2':0,'6,3':0,'6,4':0,'6,5':0};
+
+let flags={'2,2':'toReceipt','2,4':'toReview'};
+
+// 18 组语义：工序时态 × 模块 → 动作 / AI / 预览
+const S={
+'past,记录':{a:['查看原文','对比历史版本','导出留档'],ai:{n:'总结交接',d:'把该工序已确认的事实收进阶段报告，供后续追责与结算引用'},p:['拆除前的原始约定 Version 3','墙体改动前的 9 张现场照片','工长口头承诺的书面补充 Version 1'],},
+'past,约定':{a:['查看生效版','追溯到旧版','核对履行情况'],ai:{n:'咨询整理（历史口径）',d:'抽取已生效条款，形成对外的书面口径，避免口头承诺失真'},p:['Version 2 已生效并被引用 4 次','Version 1 已被替代，仅留痕']},
+'past,材料':{a:['查看领用流水','回溯批次归属','导出--览表'],ai:{n:'总结交接',d:'将该工序实际用料汇总为交接清单'},p:['水泥 32 袋，已领用 30','余量 2 袋已转入下一工序']},
+'past,费用':{a:['查看付款凭证','核对退款记录','导出流水'],ai:{n:'总结交接',d:'汇总已付款与超批准差额，纳入交接财务清单'},p:['已批准 ¥18,400，实付 ¥18,400','无超批准差额']},
+'past,问题':{a:['查看整改归档','复盘处理结果'],ai:{n:'整改辅助（复查参考）',d:'把已关闭问题沉淀为同类问题的复查要点'},p:['墙面空鼓 · 已整改并复查通过','闭水试验渗漏 · 已关闭']},
+'past,证据':{a:['按时间回溯','按空间筛选','打包导出'],ai:{n:'记录整理',d:'把散落的现场照片按工序与空间归位并形成版本'},p:['该工序共 9 张，覆盖 3 个空间']},
+
+'current,记录':{a:['记一笔','补照片','生成新版本'],ai:{n:'记录整理',d:'把现场口述、照片、语音整理为可追溯的结构化记录'},p:['水电走线巡检 · 未附照片','强弱电交叉争议 · 待负责人确认']},
+'current,约定':{a:['拟草稿','送审','挂载到工序'],ai:{n:'咨询整理',d:'把口头协商拟为可送审的书面约定，减少日后扯皮'},p:['Draft · 线管品牌变更方案，未送审']},
+'current,材料':{a:['登记到货','核对批次','标记退货'],ai:{n:'材料核对',d:'把到货批次与批准基线逐项核对，产出独立核对记录'},p:['BV-2.5 线管 · 到货 3 批待核对','已超期 2 天未核对']},
+'current,费用':{a:['登记报价','批准','记录实付'],ai:{n:'预算资源',d:'按已用量、在途与历史口径估算剩余资金需求'},p:['水电工费报价 ¥9,800 待批准','已批准但未付款 ¥0']},
+'current,问题':{a:['提出问题','附现场证据','拟整改方案'],ai:{n:'图片观察 / 整改辅助',d:'先看图定性质，再给出待选预案与复查要点'},p:['线管走向与图纸不符 · 待复查','底盒标高偏差 · 已附图未处理']},
+'current,证据':{a:['拍摄并绑定空间','补充单据','标记缺失'],ai:{n:'图片观察',d:'从现场照片识别施工状态与潜在问题，输出待确认项'},p:['14 张，其中 2 张未定位到空间']},
+
+'upcoming,记录':{a:['写准备清单','暂存草稿'],ai:{n:'咨询整理（准备）',d:'把下一工序要问施工方的问题预先整理成清单'},p:['尚无内容 —— 此处是未开辟，不是零']},
+'upcoming,约定':{a:['拟待签事项','标记冲突'],ai:{n:'咨询整理',d:'提前识别现行约定与下一工序的冲突点'},p:[' Draft 1 条，未明确到工序']},
+'upcoming,材料':{a:['估算用量','排下单计划'],ai:{n:'预算资源',d:'基于历史口径与当前进度推算下一阶段用料与资金'},p:['尚无采购登记']},
+'upcoming,费用':{a:['预算估算','设置预警线'],ai:{n:'预算资源',d:'给出区间估算并标出不确定性来源'},p:['仅有 1 条报价记录']},
+'upcoming,问题':{a:['登记风险预案','预设复查项'],ai:{n:'整改辅助（拟预案）',d:'针对该工序常见 Fail 模式预生成待选预案'},p:['尚未登记 —— 此处可提前布防']},
+'upcoming,证据':{a:['定验收标准','设待验清单'],ai:{n:'总结交接',d:'把下一工序该留什么证据先写成标准，避免事后补拍'},p:['未设验收标准']}
+};
+
+const DEFAULT={a:['查看'],ai:{n:'—',d:'该组合尚无可用任务'},p:['尚无内容 —— 未开辟，不是零']};
+
+function key(i,j){return i+','+j}
+function spec(i,j){
+  const t=STAGES[i].s, m=MODULES[j];
+  return S[t+','+m]||DEFAULT;
+}
+function render(){
+  const t=document.getElementById('terrain');
+  t.innerHTML='';
+  STAGES.forEach((st,i)=>{
+    const row=document.createElement('div');
+    row.className='row'+(st.s==='current'?' cur':'');
+    row.dataset.row=i;
+    const lb=document.createElement('div');
+    lb.className='slabel'+(st.s==='current'?' cur':'');lb.textContent=st.n;
+    row.appendChild(lb);
+    const cells=document.createElement('div');cells.className='cells';
+    MODULES.forEach((m,j)=>{
+      const c=counts[key(i,j)]||0;
+      const d=document.createElement('div');
+      d.className='node state-'+st.s+(c?'':' empty');
+      if(i===2&&st.s==='current'){/* noop */}
+      d.dataset.i=i;d.dataset.j=j;
+      d.innerHTML='<span class="n">'+(c||'·')+'</span><span class="l">'+m+'</span>';
+      d.onclick=()=>focus(i,j);
+      cells.appendChild(d);
+    });
+    row.appendChild(cells);
+    t.appendChild(row);
+  });
+}
+function focus(i,j){
+  document.getElementById('terrain').classList.add('recede');
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('focus'));
+  document.querySelectorAll('.slabel').forEach(s=>s.classList.add('dimmed'));
+  document.querySelectorAll('.row').forEach(r=>{
+    r.classList.toggle('samecol', +r.dataset.row===i);
+  });
+  const el=document.querySelector('.node[data-i="'+i+'"][data-j="'+j+'"]');
+  el.classList.add('focus');
+  const lb=document.querySelectorAll('.slabel')[i];
+  lb.classList.remove('dimmed');
+  drawReading(i,j);
+  drawLoop(i,j);
+}
+function drawReading(i,j){
+  const st=STAGES[i],m=MODULES[j],sp=spec(i,j);
+  const c=counts[key(i,j)]||0;
+  const tag={'past':'已走过','current':'正在进行','upcoming':'尚未开辟'}[st.s];
+  const flag=flags[key(i,j)];
+  const el=document.getElementById('reading');
+  el.innerHTML=
+   '<div class="focusline">'+st.n+' · '+m+'　/　'+tag+'</div>'+
+   '<div class="ftitle">'+m+(c?' · '+c+' 条':' · 未开辟')+'</div>'+
+   '<div class="fmeta">'+(flag==='toReceipt'?'存在卡点：到货待核对':flag==='toReview'?'存在卡点：待复查':'无卡点')+'</div>'+
+   '<div class="sect"><div class="sh">Peek<span class="chg">随焦点变</span></div><div class="peek"><ul>'+
+     sp.p.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></div>'+
+   '<div class="sect"><div class="sh">可执行动作<span class="chg">下一步被改写</span></div><div class="acts">'+
+     sp.a.map((x,k)=>'<span class="act'+(k===0?' primary':'')+'">'+x+'</span>').join('')+'</div></div>'+
+   '<div class="sect"><div class="sh">AI 提议<span class="chg">由焦点决定</span></div><div class="ai aitem"><div class="an">'+sp.ai.n+'</div><div class="ad">'+sp.ai.d+'</div></div></div>';
+  const p=document.querySelector('.act.primary');
+  if(p)p.onclick=()=>act(i,j);
+}
+function drawLoop(i,j){
+  const st=STAGES[i],m=MODULES[j],sp=spec(i,j);
+  const steps=[
+   ['INPUT','用户动作','焦点落在 '+st.n+' × '+m],
+   ['RESPONSE 1','空间回应','其余区域退场，视野重组'],
+   ['RESPONSE 2','语义回应','内容按「该工序的相关部分」重述，不是全模块罗列'],
+   ['RESPONSE 3','能力回应','可执行动作改为：'+sp.a.slice(0,2).join(' / ')],
+   ['RESPONSE 4','代理回应','AI 提议改为：'+sp.ai.n]
+  ];
+  document.getElementById('steps').innerHTML=steps.map((s,k)=>
+   '<div class="step'+(k===3||k===4?' live':'')+'"><div class="sn">'+s[0]+'</div><div class="st">'+s[1]+'</div><div class="sd">'+s[2]+'</div></div>').join('');
+  document.getElementById('hint').innerHTML='右下「'+sp.a[0]+'」可让 loop 闭合：<b>业务动作会改变场的条件</b>，从而改写下一轮 AI 的提议范围。试试。';
+}
+function act(i,j){
+  const k=key(i,j);
+  counts[k]=(counts[k]||0)+1;
+  if(flags[k]==='toReceipt'&&counts[k]>=9){delete flags[k];}
+  render();focus(i,j);
+}
+render();
+// 默认聚焦到当前工序的材料：一个真实存在的卡点
+setTimeout(()=>focus(2,2),260);
+</script>
+</body>
+</html>

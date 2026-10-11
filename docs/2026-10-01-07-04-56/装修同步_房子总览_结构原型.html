@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>装修同步 · 房子总览结构原型</title>
+<style>
+:root{
+  --bg:#F6F5F2; --surface:#FFFFFF; --ink:#1C1B19; --sub:#6F6B63; --faint:#9C978E;
+  --line:#E7E4DE; --accent:#0E7C66; --accent-soft:#E7F1ED; --learned:#14B8A6;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{background:#E9E7E2;display:flex;align-items:center;justify-content:center;min-height:100vh;
+  font-family:"PingFang SC","Noto Sans SC",sans-serif;color:var(--ink)}
+.phone{position:relative;width:390px;height:760px;background:var(--bg);border-radius:40px;
+  box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden;border:1px solid rgba(0,0,0,.08)}
+.screen{position:absolute;inset:0;background:var(--bg);overflow-y:auto;
+  transition:transform .34s cubic-bezier(.22,.72,.2,1);scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+#scr-room{transform:translateX(103%);box-shadow:-12px 0 32px rgba(0,0,0,.08)}
+body.inroom #scr-home{transform:translateX(-26%)}
+body.inroom #scr-room{transform:translateX(0)}
+
+/* ---------- 顶部 ---------- */
+.top{display:flex;align-items:flex-start;justify-content:space-between;padding:26px 24px 8px}
+.addr{font-size:20px;font-weight:700;letter-spacing:.2px}
+.sub{font-size:12px;color:var(--sub);margin-top:4px}
+.badge{font-size:11px;color:var(--accent);background:var(--accent-soft);
+  padding:5px 10px;border-radius:999px;white-space:nowrap;margin-top:2px;font-weight:600}
+
+/* ---------- 头图（氛围，不做导航） ---------- */
+.hero{margin:10px 16px 0;border-radius:20px;background:var(--surface);
+  border:1px solid var(--line);overflow:hidden;position:relative}
+.hero svg{display:block;width:100%;height:auto}
+.hero-cap{position:absolute;left:14px;bottom:12px;font-size:12px;color:var(--sub);
+  background:rgba(255,255,255,.86);padding:5px 10px;border-radius:999px;backdrop-filter:blur(2px)}
+
+/* ---------- 整体进度 ---------- */
+.card{margin:12px 16px 0;background:var(--surface);border:1px solid var(--line);
+  border-radius:20px;padding:16px}
+.prog-top{display:flex;align-items:baseline;justify-content:space-between}
+.big{font-size:34px;font-weight:800;letter-spacing:-.5px}
+.prog-top .sub{margin-top:0}
+.bar{height:6px;border-radius:999px;background:#EFECE6;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--accent)}
+.bar.xl{height:8px}
+
+/* ---------- 分区标题 ---------- */
+section{margin-top:22px;padding:0 16px}
+h2{font-size:15px;font-weight:700;display:flex;align-items:baseline;justify-content:space-between}
+h2 em{font-style:normal;font-size:11px;color:var(--faint);font-weight:400}
+
+/* ---------- 流程行 ---------- */
+.flow{margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.frow{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.frow:last-child{border-bottom:none}
+.fname{font-size:14px;font-weight:600;width:44px}
+.fbar{flex:1}
+.fbar .bar{margin-top:0}
+.fmeta{font-size:11px;color:var(--faint);width:56px;text-align:right}
+.frow.dim .fname{color:var(--faint)}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+
+/* ---------- 房间卡片 ---------- */
+.grid{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;
+  padding:12px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.rcard:active{transform:scale(.97)}
+.rcard:hover{box-shadow:0 8rpx 24rpx rgba(0,0,0,.06);box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.rcard svg{display:block;width:100%;height:64px}
+.rname{font-size:13px;font-weight:700;margin-top:6px}
+.rmeta{font-size:11px;color:var(--sub);margin-top:3px;display:flex;justify-content:space-between;align-items:center}
+.rpct{color:var(--accent);font-weight:700}
+.rcard .bar{margin-top:8px}
+
+/* ---------- 房间页 ---------- */
+.rhead{position:relative;padding-top:14px}
+.back{margin:12px 16px 0;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);font-size:16px;color:var(--ink);cursor:pointer}
+.rvign{margin:10px 16px 0;border-radius:20px;background:var(--surface);
+  border:1px solid var(--line);overflow:hidden}
+.rvign svg{display:block;width:100%;height:130px}
+.rtitle{padding:14px 24px 0;font-size:22px;font-weight:800}
+.rtitle span{font-size:12px;color:var(--sub);font-weight:400;margin-left:8px}
+.items{margin-top:12px}
+.irow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.irow:last-child{border-bottom:none}
+.iname{font-size:14px;font-weight:600;flex:1}
+.inote{font-size:11px;color:var(--faint);margin-top:2px;font-weight:400}
+.chip{font-size:11px;padding:4px 10px;border-radius:999px;font-weight:600;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div id="scr-home" class="screen"></div>
+  <div id="scr-room" class="screen"></div>
+</div>
+
+<script>
+/* ============ 数据 ============ */
+var STAGES=[
+  {name:'拆改', done:20, total:20},
+  {name:'水电', done:16, total:16},
+  {name:'泥瓦', done:14, total:18},
+  {name:'木工', done:6,  total:14},
+  {name:'油漆', done:0,  total:10},
+  {name:'安装', done:0,  total:9},
+  {name:'收尾', done:0,  total:8}
+];
+
+var ROOMS=[
+  {id:'living', name:'客厅', draw:'living',
+   items:[['水电','done',''],['泥瓦','done',''],['木工','done',''],['油漆','doing','墙面粉刷中'],['安装','todo',''],['收尾','todo','']]},
+  {id:'bed1', name:'主卧', draw:'bed1',
+   items:[['水电','done',''],['泥瓦','done',''],['木工','doing','衣柜柜体安装中'],['油漆','todo',''],['安装','todo','']]},
+  {id:'bed2', name:'次卧', draw:'bed2',
+   items:[['水电','done',''],['泥瓦','doing','地砖铺到一半'],['木工','todo',''],['油漆','todo',''],['安装','todo','']]},
+  {id:'kitchen', name:'厨房', draw:'kitchen',
+   items:[['水电','done',''],['防水','doing','闭水试验第二天'],['泥瓦','doing','墙砖明早收尾'],['安装','todo','']]},
+  {id:'bath', name:'卫生间', draw:'bath',
+   items:[['水电','done',''],['防水','doing','闭水试验第二天'],['泥瓦','todo',''],['安装','todo','']]},
+  {id:'balcony', name:'阳台', draw:'balcony',
+   items:[['水电','done',''],['泥瓦','todo',''],['收尾','todo','']]}
+];
+
+var ST={
+  done:{t:'已完成', c:'#14B8A6', bg:'#E5F7F4'},
+  doing:{t:'进行中', c:'#0E7C66', bg:'#E7F1ED'},
+  todo:{t:'未开始', c:'#9C978E', bg:'#F0EEE9'}
+};
+
+/* ============ 工具 ============ */
+function $(s){return document.querySelector(s);}
+function pct(d,t){return t? Math.round(d/t*100):0;}
+function bar(p,c,xl){
+  return '<div class="bar'+(xl?' xl':'')+'"><i style="width:'+p+'%;background:'+c+'"></i></div>';
+}
+function chip(st){
+  var s=ST[st];
+  return '<span class="chip" style="color:'+s.c+';background:'+s.bg+'">'+s.t+'</span>';
+}
+
+/* ============ 线稿（纸绘风，同一视觉语言） ============ */
+var INK='#1C1B19', FAIN='#9C978E', ACC='#0E7C66', PAPER='#FBFAF7';
+
+function roughFilter(id){
+  return '<filter id="'+id+'" x="-15%" y="-15%" width="130%" height="130%">'
+    +'<feTurbulence type="fractalNoise" baseFrequency="0.024" numOctaves="4" seed="7" result="n"/>'
+    +'<feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>'
+    +'</filter>';
+}
+
+/* 房子头图：正面山墙 + 侧墙 2.5D + 施工痕迹 */
+function houseSVG(){
+  var g='';
+  /* 侧墙（右，带斜切） */
+  g+='<polygon points="352,252 462,206 462,108 352,152" fill="#EFECE5"/>';
+  /* 侧墙窗（平行四边形） */
+  g+='<polygon points="392,214 428,199 428,159 392,172" fill="'+PAPER+'"/>';
+  /* 正面墙 */
+  g+='<rect x="148" y="152" width="204" height="100" fill="'+PAPER+'"/>';
+  /* 山墙三角 */
+  g+='<polygon points="148,152 352,152 250,72" fill="'+PAPER+'"/>';
+  /* 屋檐描边（一道粗的） */
+  g+='<polyline points="138,158 250,62 362,158" fill="none" stroke="'+ACC+'" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';
+  /* 正面门窗 */
+  g+='<rect x="172" y="188" width="42" height="40" fill="#EDEAE3" rx="3"/>';
+  g+='<line x1="193" y1="188" x2="193" y2="228" stroke="'+INK+'" stroke-width="2"/>';
+  g+='<rect x="238" y="188" width="42" height="40" fill="#EDEAE3" rx="3"/>';
+  g+='<line x1="259" y1="188" x2="259" y2="228" stroke="'+INK+'" stroke-width="2"/>';
+  /* 门 */
+  g+='<rect x="300" y="196" width="34" height="56" fill="#E3DFD6" rx="3"/>';
+  g+='<circle cx="326" cy="224" r="2.4" fill="'+INK+'"/>';
+  /* 施工痕迹：脚手架 + 吊线 + 砖堆 */
+  g+='<line x1="380" y1="262" x2="380" y2="170" stroke="'+INK+'" stroke-width="2"/>';
+  g+='<line x1="404" y1="262" x2="404" y2="170" stroke="'+INK+'" stroke-width="2"/>';
+  g+='<line x1="380" y1="200" x2="404" y2="200" stroke="'+INK+'" stroke-width="2"/>';
+  g+='<line x1="380" y1="232" x2="404" y2="232" stroke="'+INK+'" stroke-width="2"/>';
+  g+='<line x1="462" y1="120" x2="492" y2="120" stroke="'+INK+'" stroke-width="1.6"/>';
+  g+='<line x1="492" y1="120" x2="492" y2="170" stroke="'+INK+'" stroke-width="1.6"/>';
+  g+='<circle cx="492" cy="174" r="3" fill="'+ACC+'"/>';
+  /* 砖堆 */
+  g+='<rect x="96" y="240" width="26" height="10" rx="2" fill="#E3DFD6"/>';
+  g+='<rect x="100" y="228" width="26" height="10" rx="2" fill="#EDEAE3"/>';
+  g+='<rect x="92" y="252" width="26" height="10" rx="2" fill="#EDEAE3"/>';
+  /* 地平线 */
+  g+='<line x1="60" y1="262" x2="540" y2="262" stroke="'+FAIN+'" stroke-width="1.6"/>';
+  return '<svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg">'
+    +'<defs>'+roughFilter('rg1')+'</defs>'
+    +'<rect width="600" height="300" fill="'+PAPER+'"/>'
+    +'<g filter="url(#rg1)" stroke="'+INK+'" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+    +'<g fill="none">'+g+'</g></g></svg>';
+}
+
+/* 房间小图：每间一张线稿，同样的笔触 */
+function vignette(kind, big){
+  var g='';
+  if(kind==='living'){
+    g+='<rect x="60" y="86" width="150" height="42" rx="8" fill="'+PAPER+'"/>'
+      +'<line x1="60" y1="106" x2="210" y2="106" stroke-width="2"/>'
+      +'<line x1="110" y1="86" x2="110" y2="128" stroke-width="2"/>'
+      +'<line x1="160" y1="86" x2="160" y2="128" stroke-width="2"/>'
+      +'<rect x="48" y="78" width="14" height="50" rx="6" fill="#EDEAE3"/>'
+      +'<rect x="208" y="78" width="14" height="50" rx="6" fill="#EDEAE3"/>'
+      +'<line x1="252" y1="128" x2="252" y2="70" stroke-width="2"/>'
+      +'<path d="M240 70 Q252 54 264 70" fill="'+ACC+'" opacity=".85"/>'
+      +'<rect x="286" y="52" width="52" height="40" rx="3" fill="'+PAPER+'"/>'
+      +'<path d="M296 80 L308 62 L318 74 L330 58" fill="none" stroke="'+ACC+'" stroke-width="2.4"/>';
+  }else if(kind==='bed1'){
+    g+='<rect x="52" y="76" width="140" height="52" rx="8" fill="'+PAPER+'"/>'
+      +'<rect x="60" y="66" width="44" height="18" rx="6" fill="#EDEAE3"/>'
+      +'<rect x="112" y="66" width="44" height="18" rx="6" fill="#EDEAE3"/>'
+      +'<line x1="52" y1="98" x2="192" y2="98" stroke-width="2"/>'
+      +'<rect x="150" y="98" width="42" height="30" rx="4" fill="'+ACC+'" opacity=".85"/>'
+      +'<rect x="226" y="46" width="72" height="52" rx="4" fill="'+PAPER+'"/>'
+      +'<line x1="262" y1="46" x2="262" y2="98" stroke-width="2"/>'
+      +'<line x1="226" y1="72" x2="298" y2="72" stroke-width="2"/>';
+  }else if(kind==='bed2'){
+    g+='<rect x="56" y="84" width="112" height="44" rx="8" fill="'+PAPER+'"/>'
+      +'<rect x="64" y="74" width="38" height="16" rx="6" fill="#EDEAE3"/>'
+      +'<line x1="56" y1="104" x2="168" y2="104" stroke-width="2"/>'
+      +'<rect x="128" y="104" width="40" height="24" rx="4" fill="'+ACC+'" opacity=".85"/>'
+      +'<line x1="206" y1="128" x2="206" y2="88" stroke-width="2"/>'
+      +'<line x1="206" y1="96" x2="262" y2="96" stroke-width="2"/>'
+      +'<line x1="262" y1="96" x2="262" y2="128" stroke-width="2"/>'
+      +'<rect x="216" y="60" width="34" height="24" rx="3" fill="'+PAPER+'"/>';
+  }else if(kind==='kitchen'){
+    g+='<rect x="52" y="92" width="168" height="36" rx="4" fill="'+PAPER+'"/>'
+      +'<line x1="100" y1="92" x2="100" y2="128" stroke-width="2"/>'
+      +'<circle cx="76" cy="108" r="7" fill="none" stroke-width="2"/>'
+      +'<circle cx="124" cy="108" r="7" fill="none" stroke-width="2"/>'
+      +'<path d="M180 92 L214 92 L206 62 L188 62 Z" fill="#EDEAE3"/>'
+      +'<rect x="228" y="58" width="66" height="30" rx="3" fill="'+PAPER+'"/>'
+      +'<line x1="228" y1="73" x2="294" y2="73" stroke-width="2"/>';
+  }else if(kind==='bath'){
+    g+='<rect x="58" y="92" width="120" height="38" rx="14" fill="'+PAPER+'"/>'
+      +'<line x1="58" y1="106" x2="178" y2="106" stroke-width="2"/>'
+      +'<line x1="76" y1="130" x2="76" y2="138" stroke-width="2.4"/>'
+      +'<line x1="160" y1="130" x2="160" y2="138" stroke-width="2.4"/>'
+      +'<path d="M228 58 q0 -12 14 -12 q14 0 14 12" fill="none" stroke-width="2.4"/>'
+      +'<line x1="242" y1="58" x2="242" y2="70" stroke-width="2"/>'
+      +'<circle cx="236" cy="84" r="1.8" fill="'+ACC+'"/>'
+      +'<circle cx="248" cy="92" r="1.8" fill="'+ACC+'"/>'
+      +'<rect x="282" y="52" width="42" height="56" rx="3" fill="'+PAPER+'"/>'
+      +'<line x1="290" y1="80" x2="316" y2="80" stroke-width="2"/>';
+  }else{ /* balcony */
+    g+='<line x1="52" y1="78" x2="298" y2="78" stroke-width="2.4"/>'
+      +'<line x1="52" y1="128" x2="298" y2="128" stroke-width="2.4"/>'
+      +'<line x1="72" y1="78" x2="72" y2="128" stroke-width="2"/>'
+      +'<line x1="112" y1="78" x2="112" y2="128" stroke-width="2"/>'
+      +'<line x1="152" y1="78" x2="152" y2="128" stroke-width="2"/>'
+      +'<line x1="192" y1="78" x2="192" y2="128" stroke-width="2"/>'
+      +'<path d="M232 128 q-4 -26 10 -38 q14 12 10 38 Z" fill="'+ACC+'" opacity=".85"/>'
+      +'<rect x="226" y="118" width="32" height="12" rx="3" fill="#EDEAE3"/>'
+      +'<path d="M278 128 q-2 -18 8 -26 q10 8 8 26 Z" fill="#EDEAE3"/>'
+      +'<rect x="272" y="120" width="26" height="10" rx="3" fill="'+PAPER+'"/>';
+  }
+  var vb= big? '0 0 360 150' : '0 0 360 150';
+  return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+    +'<defs>'+roughFilter('rg-'+kind)+'</defs>'
+    +'<rect width="360" height="150" fill="'+PAPER+'"/>'
+    +'<g filter="url(#rg-'+kind+')" stroke="'+INK+'" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">'
+    +g+'</g></svg>';
+}
+
+/* ============ 渲染：总览 ============ */
+function renderHome(){
+  var td=0,tt=0;
+  STAGES.forEach(function(s){td+=s.done;tt+=s.total;});
+  var p=pct(td,tt);
+
+  var h='';
+  h+='<header class="top"><div>'
+    +'<div class="addr">阳光花园 · 3 栋 502</div>'
+    +'<div class="sub">三室两厅 · 118㎡ · 装修第 46 天</div>'
+    +'</div><span class="badge">施工中</span></header>';
+
+  /* 头图：氛围。阶段变了换这张图，结构不动 */
+  h+='<div class="hero">'+houseSVG()
+    +'<div class="hero-cap">正在装修的房子 · 泥瓦阶段过半</div></div>';
+
+  h+='<div class="card"><div class="prog-top">'
+    +'<span class="big">'+p+'%</span><span class="sub">'+td+' / '+tt+' 项完成</span>'
+    +'</div>'+bar(p,'var(--accent)',true)+'</div>';
+
+  /* 流程：只列大概的流程，不列工艺细节 */
+  h+='<section><h2>流程 <em>大概有什么 · 各到哪了</em></h2><div class="flow">';
+  STAGES.forEach(function(s){
+    var sp=pct(s.done,s.total);
+    var color = sp===100 ? ST.done.c : (sp>0 ? ST.doing.c : ST.todo.c);
+    var dim = sp===0?' dim':'';
+    var dotc = sp===100 ? ST.done.c : (sp>0 ? ST.doing.c : ST.todo.c);
+    h+='<div class="frow'+dim+'">'
+      +'<span class="dot" style="background:'+dotc+'"></span>'
+      +'<span class="fname">'+s.name+'</span>'
+      +'<div class="fbar">'+bar(sp,color)+'</div>'
+      +'<span class="fmeta">'+s.done+'/'+s.total+'</span>'
+      +'</div>';
+  });
+  h+='</div></section>';
+
+  /* 房间：点进去看细节 */
+  h+='<section><h2>房间 <em>点进去看这间到哪了</em></h2><div class="grid">';
+  ROOMS.forEach(function(r,i){
+    var rd=0,rt=0;
+    r.items.forEach(function(it){rt++; if(it[1]==='done')rd++;});
+    var rp=pct(rd,rt);
+    h+='<div class="rcard" data-i="'+i+'">'
+      +vignette(r.draw)
+      +'<div class="rname">'+r.name+'</div>'
+      +'<div class="rmeta"><span>'+rd+'/'+rt+' 环节</span><span class="rpct">'+rp+'%</span></div>'
+      +bar(rp,rp===100?'var(--learned)':'var(--accent)')
+      +'</div>';
+  });
+  h+='</div></section><div style="height:28px"></div>';
+
+  $('#scr-home').innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll('.rcard'),function(el){
+    el.addEventListener('click',function(){openRoom(+el.getAttribute('data-i'));});
+  });
+}
+
+/* ============ 渲染：房间 ============ */
+function renderRoom(i){
+  var r=ROOMS[i];
+  var rd=0,rt=r.items.length;
+  r.items.forEach(function(it){if(it[1]==='done')rd++;});
+
+  var h='';
+  h+='<header class="rhead"><button class="back" id="btn-back">←</button>'
+    +'<div class="rvign">'+vignette(r.draw,true)+'</div></header>';
+  h+='<div class="rtitle">'+r.name+'<span>'+rd+' / '+rt+' 环节完成</span></div>';
+  h+='<section style="margin-top:10px"><div class="flow items">';
+  r.items.forEach(function(it){
+    var note=it[2]?'<div class="inote">'+it[2]+'</div>':'';
+    h+='<div class="irow"><div class="iname">'+it[0]+note+'</div>'+chip(it[1])+'</div>';
+  });
+  h+='</div></section><div style="height:28px"></div>';
+
+  $('#scr-room').innerHTML=h;
+  $('#btn-back').addEventListener('click',function(){
+    document.body.classList.remove('inroom');
+  });
+}
+
+function openRoom(i){
+  renderRoom(i);
+  $('#scr-room').scrollTop=0;
+  document.body.classList.add('inroom');
+}
+
+renderHome();
+</script>
+</body>
+</html>

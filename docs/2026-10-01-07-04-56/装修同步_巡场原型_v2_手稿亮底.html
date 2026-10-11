@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>装修同步 · 巡场原型 v2 · 手稿亮底</title>
+<style>
+:root{
+  --bg:#FBFAF7; --paper:#F6F5F2; --surface:#FFFFFF; --ink:#1C1B19; --sub:#6F6B63; --faint:#9C978E;
+  --line:#E7E4DE; --accent:#0E7C66; --accent-soft:#E7F1ED; --learned:#14B8A6;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{background:#E9E7E2;display:flex;align-items:center;justify-content:center;min-height:100vh;
+  font-family:"PingFang SC","Noto Sans SC",sans-serif;color:var(--ink)}
+.phone{position:relative;width:390px;height:760px;background:var(--bg);border-radius:40px;
+  box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden;border:1px solid rgba(0,0,0,.08)}
+
+/* ---------- 娃娃屋屏 ---------- */
+.top{position:absolute;top:0;left:0;right:0;z-index:30;padding:22px 20px 10px;
+  background:linear-gradient(to bottom,var(--bg) 62%,rgba(251,250,247,0));pointer-events:none}
+.top .t1{font-size:19px;font-weight:800}
+.top .t2{font-size:11.5px;color:var(--sub);margin-top:3px}
+.top .t2 b{color:var(--accent)}
+.reset{position:absolute;top:64px;right:16px;z-index:31;font-size:11px;color:var(--sub);
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
+
+#doll-wrap{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;background:var(--bg)}
+#doll-wrap.grabbing{cursor:grabbing}
+#doll-canvas{position:absolute;width:820px;height:547px;left:0;top:0;transform-origin:0 0;will-change:transform}
+#doll-canvas img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
+
+.spot{position:absolute;z-index:20;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
+  background:rgba(255,255,255,.92);border:2px solid var(--accent);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12);
+  transition:transform .15s}
+.spot:active{transform:scale(.88)}
+.spot i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.spot.todo i{background:var(--faint)} .spot.todo{border-color:var(--faint)}
+.spot.done i{background:var(--learned)} .spot.done{border-color:var(--learned)}
+.spot .lbl{position:absolute;top:28px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font-size:10.5px;font-weight:700;color:var(--ink);background:rgba(255,255,255,.94);
+  padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+
+.legend{position:absolute;left:16px;bottom:20px;z-index:30;background:rgba(255,255,255,.94);
+  border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:10.5px;color:var(--sub)}
+.legend .row{display:flex;align-items:center;gap:6px;margin-top:4px}
+.legend .row:first-of-type{margin-top:6px}
+.sw{width:22px;height:12px;border-radius:3px;border:1px solid var(--line)}
+.sw.a{background:#FFFFFF}.sw.b{background:linear-gradient(90deg,#fff 40%,#BFD8D2 40%)}.sw.c{background:#BFD8D2}
+.hint{position:absolute;right:16px;bottom:20px;z-index:30;font-size:10.5px;color:var(--faint);
+  background:rgba(255,255,255,.9);padding:5px 10px;border-radius:999px;border:1px solid var(--line)}
+
+/* ---------- AI 入口 ---------- */
+.ai{position:absolute;right:18px;bottom:74px;z-index:40;width:44px;height:44px;border-radius:50%;
+  background:var(--accent);border:none;cursor:pointer;box-shadow:0 6px 18px rgba(14,124,102,.35)}
+.ai::before,.ai::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);
+  animation:rip 2.6s ease-out infinite}
+.ai::after{animation-delay:1.3s}
+@keyframes rip{0%{transform:scale(1);opacity:.55}100%{transform:scale(1.9);opacity:0}}
+.ai svg{position:absolute;inset:0;margin:auto}
+.aicard{position:absolute;left:14px;right:14px;bottom:14px;z-index:45;background:var(--surface);
+  border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 12px 32px rgba(0,0,0,.14);
+  transform:translateY(130%);transition:transform .3s cubic-bezier(.22,.72,.2,1)}
+.aicard.open{transform:translateY(0)}
+.aicard .ctx{font-size:11px;color:var(--accent);font-weight:700}
+.aicard .in{margin-top:8px;display:flex;gap:8px;align-items:center;background:var(--paper);
+  border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--faint)}
+.aicard .chips{margin-top:9px;display:flex;gap:6px}
+.aicard .chips span{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--sub)}
+.aicard .x{position:absolute;top:10px;right:12px;border:none;background:none;font-size:15px;color:var(--faint);cursor:pointer}
+
+/* ---------- 房间屏 ---------- */
+#room{position:absolute;inset:0;z-index:60;background:var(--bg);opacity:0;pointer-events:none;
+  transition:opacity .3s;overflow-y:auto;scrollbar-width:none}
+#room::-webkit-scrollbar{display:none}
+#room.on{opacity:1;pointer-events:auto}
+.rimg{height:300px;overflow:hidden;position:relative;background:#fff}
+.rimg img{width:100%;height:100%;object-fit:cover;display:block}
+.back{position:absolute;top:16px;left:14px;z-index:5;width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(255,255,255,.94);font-size:15px;cursor:pointer}
+.stbadge{position:absolute;left:14px;bottom:12px;z-index:5;font-size:11px;font-weight:700;
+  background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+.stbadge.todo{color:var(--faint)} .stbadge.doing{color:var(--accent)} .stbadge.done{color:var(--learned)}
+.rbody{padding:16px 18px 24px}
+.rtitle{font-size:21px;font-weight:800;display:flex;align-items:baseline;justify-content:space-between}
+.rtitle span{font-size:11.5px;color:var(--sub);font-weight:400}
+.slot{margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.irow{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:13.5px;font-weight:600}
+.irow:last-child{border-bottom:none}
+.irow .inote{font-size:10.5px;color:var(--faint);font-weight:400;margin-top:2px}
+.chip{margin-left:auto;font-size:10.5px;padding:3px 9px;border-radius:999px;font-weight:700;white-space:nowrap}
+.uncolored{margin-top:12px;font-size:11.5px;color:var(--sub);line-height:1.7;background:var(--accent-soft);
+  border-radius:12px;padding:10px 12px}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- 娃娃屋 -->
+  <div id="doll-wrap">
+    <div id="doll-canvas">
+      <img id="doll-img" src="assets_preview/Cutaway_dollhouse_cross_sectio_2026-10-02T10-14-35.png" alt="">
+    </div>
+  </div>
+
+  <header class="top">
+    <div class="t1">阳光花园 · 3 栋 502</div>
+    <div class="t2">整体 <b>59%</b> · 56/95 项 · 装修第 46 天 —— <b>颜色就是进度：上色=完工，半色=进行中，线稿=未开工</b></div>
+  </header>
+  <button class="reset" id="btn-reset">回正</button>
+  <div class="legend">
+    图例 · 进度上色
+    <div class="row"><span class="sw a"></span>纯线稿 · 未开工</div>
+    <div class="row"><span class="sw b"></span>局部上色 · 进行中</div>
+    <div class="row"><span class="sw c"></span>全彩 · 近完工</div>
+  </div>
+  <div class="hint">拖动查看整屋 · 点圆点进房间</div>
+
+  <button class="ai" id="btn-ai" aria-label="AI 助手">
+    <svg width="20" height="20" viewBox="0 0 20 20"><path d="M10 2 L11.8 8.2 L18 10 L11.8 11.8 L10 18 L8.2 11.8 L2 10 L8.2 8.2 Z" fill="#fff"/></svg>
+  </button>
+  <div class="aicard" id="aicard">
+    <button class="x" id="btn-aix">✕</button>
+    <div class="ctx" id="ai-ctx">当前：整屋 · 泥瓦阶段</div>
+    <div class="in">问点什么，或把现场照片丢进来…</div>
+    <div class="chips"><span>问进度</span><span>记一笔</span><span>传照片找场景</span></div>
+  </div>
+
+  <!-- 房间 -->
+  <div id="room">
+    <div class="rimg"><img id="r-img" src="" alt=""><button class="back" id="btn-back">←</button>
+      <span class="stbadge" id="r-badge"></span></div>
+    <div class="rbody">
+      <div class="rtitle"><span id="r-name"></span><span id="r-prog"></span></div>
+      <div class="slot" id="r-items"></div>
+      <div class="uncolored" id="r-slot" style="display:none">
+        这一间的场景图还没生产——正式管线会按<b>同一笔触</b>补齐（客厅、卫生间已示例两种进度态）。热点坐标由素材坐标系数据驱动，此处为示意位。
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据 ============ */
+var IMG_LIVING='assets_preview/Same_drawing_style__line_quali_2026-10-02T10-15-10.png';
+var IMG_BATH='assets_preview/Same_drawing_style__line_quali_2026-10-02T10-17-02.png';
+
+var ST={
+  done:{t:'近完工', c:'#14B8A6', bg:'#E5F7F4'},
+  doing:{t:'进行中', c:'#0E7C66', bg:'#E7F1ED'},
+  todo:{t:'未开工', c:'#9C978E', bg:'#F0EEE9'}
+};
+
+/* 热点坐标为占位示意；正式版由素材坐标系数据驱动 */
+var SPOTS=[
+  {id:'living', name:'客厅',  x:0.29, y:0.66, st:'doing', prog:72, img:IMG_LIVING,
+   items:[['水电','done',''],['泥瓦','doing','墙砖明早收尾'],['木工','done',''],['油漆','todo',''],['安装','todo','']]},
+  {id:'bath', name:'卫生间', x:0.115,y:0.60, st:'todo', prog:20, img:IMG_BATH,
+   items:[['水电','done',''],['防水','todo','闭水试验未开始'],['泥瓦','todo',''],['安装','todo','']]},
+  {id:'kitchen', name:'厨房', x:0.76, y:0.70, st:'doing', prog:45, img:null,
+   items:[['水电','done',''],['防水','doing',''],['泥瓦','doing',''],['安装','todo','']]},
+  {id:'bed1', name:'主卧', x:0.46, y:0.32, st:'doing', prog:55, img:null,
+   items:[['水电','done',''],['泥瓦','done',''],['木工','doing',''],['油漆','todo','']]},
+  {id:'bed2', name:'次卧', x:0.64, y:0.32, st:'todo', prog:10, img:null,
+   items:[['水电','done',''],['泥瓦','todo',''],['木工','todo',''],['油漆','todo','']]},
+  {id:'study', name:'书房', x:0.30, y:0.32, st:'done', prog:100, img:null,
+   items:[['水电','done',''],['泥瓦','done',''],['木工','done',''],['油漆','done',''],['安装','done','']]}
+];
+
+/* ============ 娃娃屋拖拽 ============ */
+var VW=390, VH=760, CW=820, CH=547;
+var canvas=document.getElementById('doll-canvas');
+var wrap=document.getElementById('doll-wrap');
+var tx=(VW-CW)/2, ty=(VH-CH)/2, saved=null;
+
+function clampT(){
+  tx=Math.min(40, Math.max(VW-CW-40, tx));
+  ty=Math.min(VH-CH-150, Math.max(150-CH+40, ty));
+}
+function apply(anim){
+  canvas.style.transition=anim?'transform .7s cubic-bezier(.25,.8,.25,1)':'none';
+  canvas.style.transform='translate('+tx+'px,'+ty+'px)';
+}
+apply(false);
+
+var drag=null;
+wrap.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.spot'))return;
+  drag={sx:e.clientX,sy:e.clientY,ox:tx,oy:ty};
+  wrap.classList.add('grabbing');
+  wrap.setPointerCapture(e.pointerId);
+});
+wrap.addEventListener('pointermove',function(e){
+  if(!drag)return;
+  tx=drag.ox+(e.clientX-drag.sx);
+  ty=drag.oy+(e.clientY-drag.sy);
+  clampT(); apply(false);
+});
+wrap.addEventListener('pointerup',function(){drag=null;wrap.classList.remove('grabbing');});
+
+document.getElementById('btn-reset').addEventListener('click',function(){
+  tx=(VW-CW)/2; ty=(VH-CH)/2; apply(true);
+});
+
+/* ============ 热点 ============ */
+SPOTS.forEach(function(s){
+  var el=document.createElement('div');
+  el.className='spot '+s.st;
+  el.style.left=(s.x*CW)+'px';
+  el.style.top=(s.y*CH)+'px';
+  el.innerHTML='<i></i><span class="lbl">'+s.name+'</span>';
+  el.addEventListener('click',function(ev){ev.stopPropagation();enterRoom(s,el);});
+  canvas.appendChild(el);
+});
+
+/* ============ 进入房间（镜头推进） ============ */
+function enterRoom(s,el){
+  var r=el.getBoundingClientRect(), w=wrap.getBoundingClientRect();
+  var hx=r.left+r.width/2-w.left, hy=r.top+r.height/2-w.top;
+  var k=2.6;
+  saved={tx:tx,ty:ty};
+  tx=VW/2-k*hx; ty=VH/2-k*hy;
+  apply(true);
+  setTimeout(function(){renderRoom(s);document.getElementById('room').classList.add('on');},420);
+}
+function leaveRoom(){
+  document.getElementById('room').classList.remove('on');
+  if(saved){tx=saved.tx;ty=saved.ty;apply(true);}
+}
+
+/* ============ 房间渲染 ============ */
+function chipHtml(st){var m=ST[st];return '<span class="chip" style="color:'+m.c+';background:'+m.bg+'">'+m.t+'</span>';}
+function renderRoom(s){
+  var img=document.getElementById('r-img');
+  if(s.img){img.src=s.img;img.style.display='';document.getElementById('r-slot').style.display='none';}
+  else{img.style.display='none';document.getElementById('r-slot').style.display='block';}
+  var b=document.getElementById('r-badge');
+  b.textContent=ST[s.st].t+' · 上色度 '+s.prog+'%';
+  b.className='stbadge '+s.st;
+  document.getElementById('r-name').textContent=s.name;
+  document.getElementById('r-prog').textContent=s.prog+'%';
+  document.getElementById('ai-ctx').textContent='当前：'+s.name+' · '+ST[s.st].t;
+  var h='';
+  s.items.forEach(function(it){
+    h+='<div class="irow"><div>'+it[0]+(it[2]?'<div class="inote">'+it[2]+'</div>':'')+'</div>'+chipHtml(it[1])+'</div>';
+  });
+  document.getElementById('r-items').innerHTML=h;
+  document.getElementById('room').scrollTop=0;
+}
+document.getElementById('btn-back').addEventListener('click',leaveRoom);
+
+/* ============ AI 入口 ============ */
+var aicard=document.getElementById('aicard');
+document.getElementById('btn-ai').addEventListener('click',function(){aicard.classList.toggle('open');});
+document.getElementById('btn-aix').addEventListener('click',function(){aicard.classList.remove('open');});
+</script>
+</body>
+</html>

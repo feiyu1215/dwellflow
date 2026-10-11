@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>装修同步 · 巡场原型 v4 · 料场（场景纯净性预算试验田）</title>
+<style>
+  :root{
+    --ink:#3a3630; --paper:#f7f1e3; --paper2:#efe6d2;
+    --acc:#c05a3a; --acc2:#3f7d74; --ochre:#c9972f; --dim:#8a8378;
+    --card:#fffdf6; --line:#d8cdb6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    overflow:hidden; display:flex; flex-direction:column;
+  }
+  /* ============ 巡的结构：顶部场地导航（巡的一部分，非场景 UI） ============ */
+  .trail{
+    flex:0 0 auto; display:flex; align-items:center; gap:14px;
+    padding:12px 16px 8px; font-size:12px;
+  }
+  .trail .back{color:var(--dim); cursor:pointer; display:flex; align-items:center; gap:4px;}
+  .trail .back b{color:var(--ink); font-size:13px;}
+  .dots{display:flex; gap:10px; margin-left:auto; align-items:center;}
+  .dot{
+    width:22px;height:22px;border-radius:50%; border:1.5px solid var(--line);
+    background:var(--card); cursor:pointer; position:relative;
+  }
+  .dot.on{border-color:var(--acc); box-shadow:0 0 0 3px rgba(192,90,58,.15);}
+  .dot i{position:absolute; inset:5px; border-radius:50%; background:var(--line);}
+  .dot[data-f="house"] i{background:var(--ink);}
+  .dot[data-f="yard"] i{background:var(--ochre);}
+  .dot[data-f="board"] i{background:var(--acc2);}
+  .dot[data-f="desk"] i{background:#7a6bb5;}
+  .dot[data-f="cam"] i{background:#555;}
+  .legend{font-size:10px; color:var(--dim); margin-left:10px; white-space:nowrap;}
+  .legend s{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;
+    background:linear-gradient(90deg,var(--paper2) 30%,var(--acc) 70%);text-decoration:none;vertical-align:-1px;}
+  /* ============ 场景本身 ============ */
+  .scene{flex:1 1 auto; position:relative; min-height:0;}
+  .scene svg{width:100%; height:100%; display:block;}
+  .obj{cursor:pointer;}
+  .obj:hover .halo{opacity:1;}
+  .halo{opacity:0; transition:opacity .2s; pointer-events:none;}
+  .obj.picked .halo{opacity:1;}
+  /* ============ 对象卡 / AI 流程（都在卡里，不上场景） ============ */
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; z-index:30;
+    background:var(--card); border-top:1.5px solid var(--line);
+    border-radius:18px 18px 0 0; box-shadow:0 -8px 30px rgba(58,54,48,.12);
+    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    transform:translateY(110%); transition:transform .32s cubic-bezier(.22,.9,.3,1);
+    max-height:72%; overflow:auto;
+  }
+  .sheet.show{transform:translateY(0);}
+  .sheet h3{font-size:15px; display:flex; align-items:baseline; gap:8px;}
+  .sheet h3 small{font-size:11px; color:var(--dim); font-weight:400;}
+  .sheet .x{position:absolute; right:14px; top:12px; color:var(--dim); font-size:18px; cursor:pointer; padding:4px 8px;}
+  .cov{display:flex; align-items:center; gap:8px; margin:8px 0 2px; font-size:11px; color:var(--dim);}
+  .covbar{flex:1; height:6px; border-radius:3px; background:var(--paper2); overflow:hidden;}
+  .covbar i{display:block; height:100%; background:linear-gradient(90deg,var(--ochre),var(--acc));}
+  /* 时间线：计划→采购→到货→使用→缺口 */
+  .tl{display:flex; gap:0; margin:12px 0 4px;}
+  .tl .st{flex:1; text-align:center; position:relative; font-size:10px; color:var(--dim);}
+  .tl .st .k{
+    width:26px;height:26px;border-radius:50%; margin:0 auto 4px;
+    border:1.5px solid var(--line); background:var(--paper2);
+    display:flex;align-items:center;justify-content:center; font-size:11px; color:var(--dim);
+  }
+  .tl .st.done .k{background:var(--acc2); border-color:var(--acc2); color:#fff;}
+  .tl .st.warn .k{background:var(--ochre); border-color:var(--ochre); color:#fff;}
+  .tl .st.zero .k{background:var(--card); border-color:var(--line);}
+  .tl .st:not(:last-child)::after{
+    content:""; position:absolute; top:13px; left:calc(50% + 15px); width:calc(100% - 30px); height:1.5px; background:var(--line);
+  }
+  .tl .st.done:not(:last-child)::after{background:var(--acc2);}
+  .tl .st.warn:not(:last-child)::after{background:var(--ochre);}
+  .facts{font-size:12px; background:var(--paper); border:1px dashed var(--line); border-radius:10px; padding:8px 10px; margin:10px 0; line-height:1.7;}
+  .facts b{color:var(--acc);}
+  /* 动作区：人的动作在前，AI 就地入口在后 */
+  .acts{display:flex; gap:10px; margin-top:12px;}
+  .btn{
+    flex:1; text-align:center; padding:11px 0; border-radius:12px; font-size:13px; cursor:pointer;
+    border:1.5px solid var(--ink); background:var(--ink); color:#fff; font-weight:600;
+  }
+  .btn.ghost{background:var(--card); color:var(--ink); border-color:var(--line); font-weight:400;}
+  .btn.ai{background:var(--acc2); border-color:var(--acc2);}
+  .btn.mini{flex:0 0 auto; padding:8px 14px; font-size:12px;}
+  .btn:active{transform:scale(.97);}
+  /* AI 五步循环 */
+  .step-tag{font-size:10px; color:var(--acc2); letter-spacing:1px; margin:14px 0 6px;}
+  .step-tag b{font-size:12px;}
+  .cands{display:flex; flex-direction:column; gap:8px;}
+  .cand{
+    display:flex; align-items:center; gap:10px; padding:9px 12px; border:1.5px solid var(--line);
+    border-radius:10px; font-size:12px; cursor:pointer; background:var(--paper);
+  }
+  .cand.on{border-color:var(--acc2); background:#eef4f2;}
+  .cand .pc{margin-left:auto; font-size:11px; color:var(--dim);}
+  .cand .pc b{color:var(--acc2);}
+  .draft{border:1.5px solid var(--acc2); border-radius:12px; padding:12px; background:#f2f7f5;}
+  .draft .row{display:flex; font-size:12px; padding:4px 0; gap:8px;}
+  .draft .row span{color:var(--dim); flex:0 0 62px;}
+  .draft textarea{
+    width:100%; border:1px solid var(--line); border-radius:8px; padding:8px; font-size:12px;
+    background:#fff; color:var(--ink); resize:none; font-family:inherit; line-height:1.6;
+  }
+  .draft textarea:focus{outline:1.5px solid var(--acc2);}
+  .thinking{font-size:12px; color:var(--dim); padding:14px 0; display:flex; align-items:center; gap:8px;}
+  .thinking em{width:6px;height:6px;border-radius:50%;background:var(--acc2);animation:br 1s infinite;}
+  .thinking em:nth-child(2){animation-delay:.2s} .thinking em:nth-child(3){animation-delay:.4s}
+  @keyframes br{50%{opacity:.2}}
+  /* ============ 呼吸点：唯一 AI 入口（被动=管家 / 主动=哨兵） ============ */
+  .breath{
+    position:absolute; right:18px; bottom:calc(22px + env(safe-area-inset-bottom)); z-index:40;
+    width:52px; height:52px; border-radius:50%; cursor:pointer;
+    background:var(--acc2); color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:20px; box-shadow:0 4px 16px rgba(63,125,116,.4);
+  }
+  .breath::before{
+    content:""; position:absolute; inset:-6px; border-radius:50%;
+    border:2px solid rgba(63,125,116,.45); animation:brz 2.4s ease-out infinite;
+  }
+  @keyframes brz{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.35);opacity:0}}
+  .breath .badge{
+    position:absolute; right:-2px; top:-2px; width:16px; height:16px; border-radius:50%;
+    background:var(--acc); border:2px solid var(--card); display:none;
+  }
+  .breath.sentry::before{border-color:rgba(192,90,58,.55); animation-duration:1.4s;}
+  .breath.sentry .badge{display:block; animation:pulse 1.2s infinite;}
+  @keyframes pulse{50%{transform:scale(1.25)}}
+  /* 管家面板 / 哨兵卡：从呼吸点弹出，仍不是场景元素 */
+  .pop{
+    position:absolute; right:14px; bottom:calc(86px + env(safe-area-inset-bottom)); z-index:40;
+    width:min(320px, calc(100vw - 28px));
+    background:var(--card); border:1.5px solid var(--line); border-radius:14px;
+    box-shadow:0 12px 32px rgba(58,54,48,.18); padding:14px; display:none;
+  }
+  .pop.show{display:block; animation:up .22s ease-out;}
+  @keyframes up{from{transform:translateY(8px); opacity:0}}
+  .pop h4{font-size:13px; margin-bottom:8px;}
+  .pop h4 small{color:var(--dim); font-weight:400; margin-left:6px; font-size:10px;}
+  .pop textarea{
+    width:100%; height:56px; border:1px solid var(--line); border-radius:10px; padding:8px;
+    font-size:12px; resize:none; font-family:inherit; background:#fff;
+  }
+  .pop textarea:focus{outline:1.5px solid var(--acc2);}
+  .pop .acts{margin-top:10px;}
+  .sentry-card{font-size:12px; line-height:1.7;}
+  .sentry-card .head{color:var(--acc); font-weight:600; margin-bottom:6px;}
+  .sentry-card .why{color:var(--dim); font-size:11px; border-top:1px dashed var(--line); margin-top:8px; padding-top:8px;}
+  .toast{
+    position:fixed; left:50%; bottom:110px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; font-size:12px; padding:9px 16px; border-radius:20px;
+    opacity:0; transition:.3s; z-index:60; pointer-events:none; white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  @media (min-width:760px){ .scene{max-width:520px; margin:0 auto;} body{max-width:520px; margin:0 auto; box-shadow:0 0 60px rgba(0,0,0,.08);} }
+</style>
+</head>
+<body>
+
+  <!-- 巡的导航：房子 ← → 各事务场地。只有圆点，没有多余标签 -->
+  <div class="trail">
+    <div class="back" id="back">‹ <b>回到房子</b></div>
+    <div class="dots">
+      <div class="dot on" data-f="yard" title="料场（当前）"></div>
+      <div class="dot" data-f="board" title="告示板"></div>
+      <div class="dot" data-f="desk" title="图纸桌"></div>
+      <div class="dot" data-f="cam" title="监控屏"></div>
+      <div class="dot" data-f="house" title="房子"></div>
+      <div class="legend"><s></s>上色=记录覆盖度</div>
+    </div>
+  </div>
+
+  <!-- ============ 场景本身：料场（手稿亮底） ============ -->
+  <div class="scene">
+    <svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="gnd" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#efe6d2"/><stop offset="1" stop-color="#e7dabc"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="520" fill="url(#gnd)"/>
+      <!-- 地面分区线（场景本身的一部分，画得像粉笔线） -->
+      <g stroke="#b9a984" stroke-width="2" stroke-dasharray="10 8" fill="none" opacity=".8">
+        <path d="M70 430 Q400 400 730 430"/>
+        <path d="M110 250 L95 425"/>
+        <path d="M560 240 L640 428"/>
+      </g>
+      <g fill="#a3946f" font-size="15" font-family="'PingFang SC',sans-serif" opacity=".65">
+        <text x="128" y="282">已到货区</text>
+        <text x="565" y="272">待核对区</text>
+      </g>
+
+      <!-- 对象 1：瓷砖堆（覆盖度高，接近全彩） -->
+      <g class="obj" id="o-tile" data-k="tile">
+        <rect class="halo" x="118" y="270" width="180" height="185" rx="14" fill="rgba(63,125,116,.12)"/>
+        <path d="M130 420 h160 M135 420 v-25 q0 -8 8 -8 h144 q8 0 8 8 v25" fill="none" stroke="#3a3630" stroke-width="3" stroke-linecap="round"/>
+        <rect x="150" y="330" width="118" height="58" rx="4" fill="#c05a3a" stroke="#3a3630" stroke-width="2.5"/>
+        <rect x="152" y="300" width="114" height="28" rx="4" fill="#d1785a" stroke="#3a3630" stroke-width="2.5"/>
+        <rect x="158" y="276" width="102" height="22" rx="4" fill="#e09a80" stroke="#3a3630" stroke-width="2.5"/>
+        <path d="M150 359 h118 M209 330 v58" stroke="#7a3421" stroke-width="1.6" fill="none"/>
+        <text x="196" y="452" text-anchor="middle" font-size="14" fill="#5a5346" font-family="'PingFang SC',sans-serif">瓷砖</text>
+      </g>
+
+      <!-- 对象 2：乳胶漆桶（半上色） -->
+      <g class="obj" id="o-paint" data-k="paint">
+        <rect class="halo" x="330" y="300" width="150" height="150" rx="14" fill="rgba(63,125,116,.12)"/>
+        <g stroke="#3a3630" stroke-width="2.6" fill="none" stroke-linecap="round">
+          <path d="M348 352 v92 h44 v-92"/>
+          <path d="M348 352 q22 -12 44 0" fill="#d8cdb6"/>
+          <path d="M406 372 v74 h44 v-74"/>
+          <path d="M406 372 q22 -12 44 0" fill="#d8cdb6"/>
+        </g>
+        <path d="M350 400 h40" stroke="#3f7d74" stroke-width="14" opacity=".85"/>
+        <text x="402" y="472" text-anchor="middle" font-size="14" fill="#5a5346" font-family="'PingFang SC',sans-serif">乳胶漆</text>
+      </g>
+
+      <!-- 对象 3：木地板捆（覆盖度低，仅局部上色） -->
+      <g class="obj" id="o-wood" data-k="wood">
+        <rect class="halo" x="500" y="286" width="130" height="160" rx="14" fill="rgba(63,125,116,.12)"/>
+        <g stroke="#3a3630" stroke-width="2.6" fill="none" stroke-linecap="round">
+          <path d="M514 330 l86 -14 l8 96 l-86 14 z"/>
+          <path d="M522 344 l70 -12 M526 380 l74 -12 M528 404 l76 -12"/>
+        </g>
+        <path d="M524 358 l72 -12" stroke="#c9972f" stroke-width="9" opacity=".85" stroke-linecap="round"/>
+        <text x="562" y="472" text-anchor="middle" font-size="14" fill="#5a5346" font-family="'PingFang SC',sans-serif">木地板</text>
+      </g>
+
+      <!-- 对象 4：洁具箱（未到货 = 纯线稿空位 + 缺口记号） -->
+      <g class="obj" id="o-bath" data-k="bath">
+        <rect class="halo" x="640" y="300" width="120" height="150" rx="14" fill="rgba(63,125,116,.12)"/>
+        <g stroke="#8a8378" stroke-width="2.6" fill="none" stroke-dasharray="7 6" stroke-linecap="round">
+          <rect x="656" y="330" width="88" height="98" rx="6"/>
+        </g>
+        <path d="M676 379 h48 M700 355 v48" stroke="#8a8378" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M682 448 q18 10 36 0" stroke="#c05a3a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <text x="640" y="470" font-size="14" fill="#c05a3a" font-family="'PingFang SC',sans-serif">缺口</text>
+        <text x="700" y="470" text-anchor="middle" font-size="14" fill="#5a5346" font-family="'PingFang SC',sans-serif">洁具</text>
+      </g>
+    </svg>
+
+    <!-- 呼吸点：唯一 AI 入口 -->
+    <div class="breath" id="breath">
+      <div class="badge"></div>
+    </div>
+
+    <!-- 管家（被动形态） -->
+    <div class="pop" id="pop-butler">
+      <h4>跟 AI 说一句<small>它会定位到对应对象、替你起草</small></h4>
+      <textarea id="butler-in" placeholder="例：今天瓷砖补到了 2 箱，帮我记上"></textarea>
+      <div class="acts">
+        <div class="btn ghost mini" id="butler-cancel">收起</div>
+        <div class="btn ai mini" id="butler-send">发给 AI</div>
+      </div>
+    </div>
+
+    <!-- 哨兵（主动形态） -->
+    <div class="pop" id="pop-sentry">
+      <div class="sentry-card">
+        <div class="head">⚑ 建议核查：瓷砖 到货记录</div>
+        <div>采购记的是 <b>20 箱</b>，到货只记了 <b>18 箱</b>，差 2 箱还没有说法。</div>
+        <div class="why">依据：仅使用你已记录的事实（瓷砖·采购 20 / 瓷砖·到货 18），不含任何猜测。</div>
+        <div class="acts">
+          <div class="btn ghost mini" id="sentry-later">先不管</div>
+          <div class="btn ai mini" id="sentry-go">让 AI 核对</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 对象卡 + AI 五步循环 -->
+    <div class="sheet" id="sheet">
+      <div class="x" id="sheet-x">×</div>
+      <div id="card-body"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+<script>
+/* ================= 数据（对齐 PRD：材料五态 计划→采购→到货→使用→缺口） ================= */
+var OBJS = {
+  tile:{
+    name:'瓷砖', sub:'客厅地面', cov:85, color:'#c05a3a',
+    fact:'采购 <b>20 箱</b> · 到货 <b>18 箱</b> · 已用 <b>6 箱</b>',
+    tl:['计划','采购','到货','使用','缺口'], st:['done','done','warn','done','zero'],
+    arrNote:'采购20箱 · 到货18箱 · 差2箱待核查'
+  },
+  paint:{
+    name:'乳胶漆', sub:'墙面', cov:50, color:'#3f7d74',
+    fact:'采购 <b>2 桶</b> · 到货已记录 · 使用未记录',
+    tl:['计划','采购','到货','使用','缺口'], st:['done','done','done','zero','zero']
+  },
+  wood:{
+    name:'木地板', sub:'卧室', cov:30, color:'#c9972f',
+    fact:'只记了计划：<b>铺装约 40㎡</b>，还没到采购',
+    tl:['计划','采购','到货','使用','缺口'], st:['done','zero','zero','zero','zero']
+  },
+  bath:{
+    name:'洁具', sub:'卫生间', cov:0, color:'#8a8378',
+    fact:'计划里有 <b>马桶+浴室柜</b>，但没有任何记录，且已被标记为缺口',
+    tl:['计划','采购','到货','使用','缺口'], st:['done','zero','zero','zero','warn']
+  }
+};
+var cur = 'tile';          // 当前打开的对象
+var aiPick = 0;            // AI 定位的候选
+var sheetEl = document.getElementById('sheet');
+var cardEl = document.getElementById('card-body');
+var toastEl = document.getElementById('toast');
+
+function toast(t){ toastEl.textContent=t; toastEl.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(function(){toastEl.classList.remove('show');},2200); }
+
+/* ================= 对象卡（人的动作在前，AI 就地入口在后） ================= */
+function renderObj(k){
+  var o=OBJS[k];
+  var stc=['done','done','warn','done','zero'], s='';
+  s+='<h3>'+o.name+'<small>'+o.sub+'</small></h3>';
+  s+='<div class="cov"><span>记录覆盖度 '+o.cov+'%</span><div class="covbar"><i style="width:'+o.cov+'%"></i></div></div>';
+  s+='<div class="tl">';
+  for(var i=0;i<5;i++){ s+='<div class="st '+o.st[i]+'"><div class="k">'+('✓▲–·!')[i]+'</div>'+o.tl[i]+'</div>'; }
+  s+='</div>';
+  s+='<div class="facts">'+o.fact+'</div>';
+  s+='<div class="acts">'
+    + '<div class="btn" data-a="mine">我来记录</div>'
+    + '<div class="btn ai" data-a="ai">让 AI 核对</div>'
+    + '</div>';
+  s+='<div style="font-size:10px;color:#8a8378;margin-top:8px;text-align:center;">两个动作都在这个对象上就地完成 · 不用去别的地方</div>';
+  cardEl.innerHTML=s;
+}
+/* 我来记录 = 诚实入口：真表单，AI 只是可选 */
+function renderMine(k){
+  var o=OBJS[k], s='';
+  s+='<h3>记一笔 · '+o.name+'<small>人写，AI 不插手</small></h3>';
+  s+='<div class="draft" style="margin-top:10px;">'
+    +'<div class="row"><span>对象</span><b>'+o.name+'（'+o.sub+'）</b></div>'
+    +'<div class="row"><span>状态</span><b>到货</b></div>'
+    +'<textarea id="mine-note" rows="3" placeholder="写了什么就记什么，例如：到货 2 箱，师傅签收"></textarea>'
+    +'</div>';
+  s+='<div class="acts">'
+    +'<div class="btn ghost" data-a="back">返回</div>'
+    +'<div class="btn" id="mine-save">写回记录</div>'
+    +'</div>';
+  cardEl.innerHTML=s;
+  document.getElementById('mine-save').onclick=function(){
+    var v=document.getElementById('mine-note').value.trim();
+    if(!v){ toast('先写点内容'); return; }
+    writeBack(k, v, null);
+  };
+}
+function writeBack(k, note, jump){
+  OBJS[k].cov=Math.min(97,OBJS[k].cov+12);
+  toast('已写回「'+OBJS[k].name+'」的记录 ✓');
+  renderObj(k);
+  if(jump){ setTimeout(function(){ openObj(jump); },900); }
+}
+
+/* ================= AI 五步循环（就地拍板，AI 只起草不拍板） ================= */
+function renderAI(k, from){
+  var s='<div class="thinking"><em></em><em></em><em></em> AI 正在定位这条记录该挂在哪…</div>';
+  cardEl.innerHTML=s;
+  setTimeout(function(){ renderLocate(k, from); }, 900);
+}
+function renderLocate(k, from){
+  var cands=[
+    {t:'瓷砖 · 到货记录', p:87},
+    {t:'瓷砖 · 采购记录', p:64},
+    {t:'泥瓦工序 · 材料进度', p:31}
+  ];
+  var o=OBJS[k], s='';
+  s+='<h3>AI 核对 · '+o.name+'<small>'+(from==='sentry'?'来自哨兵提醒':'来自对象卡')+'</small></h3>';
+  s+='<div class="step-tag"><b>① 定位</b> · 我判断这条核对最可能挂在下面，点一下可改判</div>';
+  s+='<div class="cands">';
+  for(var i=0;i<cands.length;i++){
+    s+='<div class="cand'+(i===aiPick?' on':'')+'" data-i="'+i+'">'+cands[i].t
+     +'<span class="pc">置信度 <b>'+cands[i].p+'%</b></span></div>';
+  }
+  s+='</div>';
+  s+='<div class="acts"><div class="btn ghost" data-a="back">返回</div><div class="btn ai" id="ai-next">就用这个 →</div></div>';
+  cardEl.innerHTML=s;
+  Array.prototype.forEach.call(cardEl.querySelectorAll('.cand'),function(el){
+    el.onclick=function(){ aiPick=+el.getAttribute('data-i'); renderLocate(k,from); };
+  });
+  document.getElementById('ai-next').onclick=function(){ renderDraft(k); };
+}
+function renderDraft(k){
+  var s='';
+  s+='<div class="step-tag"><b>② 代办</b> · 我替你起草好了，数字来自已记录的事实</div>';
+  s+='<div class="draft">'
+    +'<div class="row"><span>核对项</span><b>瓷砖 · 到货</b></div>'
+    +'<div class="row"><span>发现</span><b>采购 20 箱 vs 到货 18 箱，差 2 箱</b></div>'
+    +'<div class="row"><span>草稿</span></div>'
+    +'<textarea id="draft-note" rows="2">到货时拆损 2 箱（师傅现场确认），已补进到货记录。</textarea>'
+    +'</div>';
+  s+='<div class="step-tag"><b>③ 拍板</b> · 写不写、怎么写，由你定</div>';
+  s+='<div class="acts">'
+    +'<div class="btn ghost" id="draft-edit">我要改</div>'
+    +'<div class="btn ai" id="draft-ok">照此写回</div>'
+    +'</div>';
+  cardEl.innerHTML=s;
+  document.getElementById('draft-edit').onclick=function(){ document.getElementById('draft-note').focus(); };
+  document.getElementById('draft-ok').onclick=function(){
+    OBJS.tile.st=['done','done','done','done','zero'];
+    OBJS.tile.arrNote='采购20箱 · 到货18箱 · 拆损2箱已记录';
+    writeBack('tile', null, 'bath');
+    setTimeout(function(){
+      toast('已定位到缺口 → 洁具');
+    },1600);
+  };
+}
+
+/* ================= 交互接线 ================= */
+function openObj(k){
+  cur=k;
+  renderObj(k);
+  sheetEl.classList.add('show');
+  Array.prototype.forEach.call(document.querySelectorAll('.obj'),function(g){
+    g.classList.toggle('picked', g.getAttribute('data-k')===k);
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.obj'),function(g){
+  g.addEventListener('click',function(){
+    if(aiPickLocked()) return;
+    openObj(g.getAttribute('data-k'));
+  });
+});
+function aiPickLocked(){ return cardEl.innerHTML.indexOf('AI 正在定位')>-1; }
+
+cardEl.addEventListener('click',function(e){
+  var a=e.target.getAttribute && e.target.getAttribute('data-a');
+  if(a==='back') renderObj(cur);
+  if(a==='mine') renderMine(cur);
+  if(a==='ai'){ aiPick=0; renderAI(cur, 'card'); }
+});
+document.getElementById('sheet-x').onclick=function(){ sheetEl.classList.remove('show'); };
+document.getElementById('back').onclick=function(){ toast('回到房子（穿门原型见 v3，这里不重复做）'); };
+
+/* 场地圆点：巡的不只是房子 */
+Array.prototype.forEach.call(document.querySelectorAll('.dot'),function(d){
+  d.addEventListener('click',function(){
+    var f=d.getAttribute('data-f');
+    if(f==='yard'){ return; }
+    Array.prototype.forEach.call(document.querySelectorAll('.dot'),function(x){x.classList.remove('on');});
+    d.classList.add('on');
+    toast(f==='house'?'房子场景见 v3 原型':'告示板 / 图纸桌 / 监控屏：同款对象+对象卡结构，待铺');
+    if(f==='house'){ setTimeout(function(){ d.classList.remove('on'); document.querySelector('.dot[data-f="yard"]').classList.add('on'); },1400); }
+  });
+});
+
+/* 呼吸点：被动=管家，主动=哨兵 */
+var breath=document.getElementById('breath');
+var popB=document.getElementById('pop-butler'), popS=document.getElementById('pop-sentry');
+var sentryOn=false;
+setTimeout(function(){ sentryOn=true; breath.classList.add('sentry'); },2600);
+
+breath.addEventListener('click',function(){
+  if(sentryOn && !popS.classList.contains('shown-once')){
+    popS.classList.add('show','shown-once'); popB.classList.remove('show');
+    breath.classList.remove('sentry'); sentryOn=false; return;
+  }
+  popS.classList.remove('show');
+  popB.classList.toggle('show');
+  if(popB.classList.contains('show')) document.getElementById('butler-in').focus();
+});
+document.getElementById('butler-cancel').onclick=function(){ popB.classList.remove('show'); };
+document.getElementById('butler-send').onclick=function(){
+  var v=document.getElementById('butler-in').value.trim();
+  if(!v){ toast('说点什么，我才能去定位'); return; }
+  popB.classList.remove('show');
+  cur='tile'; openObj('tile'); aiPick=0; renderAI('tile','card');
+  toast('收到，我定位到了瓷砖（87%）');
+};
+document.getElementById('sentry-later').onclick=function(){ popS.classList.remove('show'); };
+document.getElementById('sentry-go').onclick=function(){
+  popS.classList.remove('show');
+  openObj('tile'); aiPick=0; renderAI('tile','sentry');
+};
+popS.addEventListener('click',function(e){ if(e.target===popS) popS.classList.remove('show'); });
+</script>
+</body>
+</html>

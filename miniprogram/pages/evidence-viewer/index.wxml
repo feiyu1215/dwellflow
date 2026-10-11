@@ -1,0 +1,31 @@
+<view class="viewer-page">
+  <view class="viewer-nav"><view class="back-link" bindtap="goBack">关闭</view><view class="nav-title">{{asset ? asset.id : '证据原件'}}</view><view class="viewer-more" bindtap="showMore">•••</view></view>
+  <view wx:if="{{invalid}}" class="invalid-card"><view class="access-symbol"><view></view></view><view class="empty-title">这份证据当前不可访问</view><view class="meta">它可能已被移除、属于其他项目，或入口上下文已经失效。为保护项目信息，这里不展示旧缓存。</view><button class="primary" bindtap="goEvidenceList">返回证据清单</button></view>
+  <block wx:elif="{{asset}}">
+    <view class="original-stage {{previewAvailable ? '' : 'unavailable'}}">
+      <image wx:if="{{previewAvailable && asset.category === 'image'}}" class="original-image" mode="aspectFit" src="{{previewPath}}" bindtap="previewImage"></image>
+      <video wx:if="{{previewAvailable && asset.category === 'video'}}" class="original-video" src="{{previewPath}}" controls show-center-play-btn></video>
+      <view wx:if="{{previewAvailable && asset.category === 'audio'}}" class="audio-panel"><view class="audio-mark">∿</view><view class="audio-copy"><view class="audio-title">现场语音原件</view><view class="meta">离开页面后自动停止播放</view></view><button class="audio-button" bindtap="toggleAudio">{{isPlaying ? '暂停' : '播放'}}</button></view>
+      <view wx:if="{{previewAvailable && asset.category === 'document'}}" class="document-panel"><view class="document-mark">DOC</view><view class="document-name">{{asset.fileName}}</view><button class="primary open-document" bindtap="openDocument">打开文件</button></view>
+      <view wx:if="{{!previewAvailable}}" class="unavailable-copy"><view class="unavailable-icon"><view></view></view><view class="empty-title">{{asset.statusLabel}}</view><view class="meta">{{previewReason}}</view><button class="secondary" bindtap="goEvidenceList">去证据清单处理</button></view>
+      <view class="media-badge">原件 · 不覆盖</view><view class="media-position">{{asset.categoryLabel}} · v{{asset.version}}</view>
+    </view>
+    <view class="viewer-sheet">
+      <view class="viewer-sheet-heading"><view class="title">{{asset.fileName}}</view><view class="viewer-lede">缩略裁切和标注不改变原始资产；AI 观察必须引用证据 ID 和资产版本。</view><view class="status-line"><view class="status-dot {{asset.status}}"></view><text>{{asset.statusLabel}}</text><text>·</text><text>{{locationLabel}}</text><text>·</text><text>{{asset.categoryLabel}} v{{asset.version}}</text></view></view>
+      <view wx:if="{{readonly}}" class="readonly-note">项目已归档，可查看原件与历史关联，不能修改。</view>
+      <view class="truth-note">原件存在与摘要一致，只说明文件未被当前校验发现变化，不代表内容、责任或工程结论真实。</view>
+      <view wx:if="{{previewAvailable && asset.category === 'image'}}" class="image-hint" bindtap="previewImage"><view class="hint-icon"></view><text>点击图片查看原图并缩放</text><text>›</text></view>
+      <view class="section-head metadata-head" bindtap="toggleMetadata"><view><view class="section-title">原件信息</view><view class="section-kicker">ID、时间口径与完整性摘要</view></view><view class="toggle-mark {{showMetadata ? 'open' : ''}}">⌄</view></view>
+      <view wx:if="{{showMetadata}}" class="card metadata-card">
+        <view class="metadata-row"><text>证据 ID</text><text class="mono">{{asset.id}}</text></view><view class="metadata-row"><text>接收时间</text><text>{{asset.receivedLabel}}</text></view><view class="metadata-row"><text>拍摄时间</text><text>{{asset.capturedLabel}}</text></view><view class="metadata-row"><text>发生时间</text><text>{{asset.occurredLabel}}</text></view><view class="metadata-row"><text>时间来源</text><text>{{asset.timeSourceLabel}}</text></view><view class="metadata-row"><text>实际大小</text><text>{{asset.sizeLabel}}</text></view>
+        <view class="metadata-hash"><view>实测 SHA-256</view><text>{{asset.actualHashLabel}}</text></view><view wx:if="{{asset.expectedSha256}}" class="metadata-hash"><view>期望 SHA-256</view><text>{{asset.expectedHashLabel}}</text></view>
+      </view>
+      <view class="section-head"><view><view class="section-title">关联对象</view><view class="section-kicker">点对象可直接进入；解除关联不会删除原件。</view></view><view class="section-count">{{associations.length}}</view></view>
+      <view class="card association-card" wx:for="{{associations}}" wx:key="id" data-id="{{item.id}}" bindtap="openAssociation"><view class="association-mark"><view></view></view><view class="association-main"><view class="association-title">{{item.targetLabel}}</view><view class="meta">{{item.targetMeta}} · {{item.relationLabel}}</view></view><view wx:if="{{item.protected}}" class="locked-label">来源</view><view wx:elif="{{!readonly}}" class="remove-link" data-id="{{item.id}}" catchtap="removeAssociation">解除</view><view class="association-arrow">›</view></view>
+      <view wx:if="{{!associations.length}}" class="association-empty">尚未关联业务对象；原件仍独立保留。</view>
+      <view wx:if="{{!readonly && candidates.length}}" class="card add-association"><view class="label">再关联到</view><picker mode="selector" range="{{candidates}}" range-key="label" value="{{candidateIndex}}" bindchange="onCandidateChange"><view class="picker">{{candidates[candidateIndex].label}}</view></picker><button class="secondary add-button" bindtap="addAssociation">关联为支持材料</button></view>
+      <view wx:if="{{!readonly && !candidates.length}}" class="quiet-note">当前项目没有更多可关联对象。</view>
+    </view>
+  </block>
+</view>
+

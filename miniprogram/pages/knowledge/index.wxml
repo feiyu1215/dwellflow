@@ -1,0 +1,60 @@
+<view class="page">
+  <view class="utility-header">
+    <view class="eyebrow">人可查阅，AI 可引用</view>
+    <view class="title">检查参考</view>
+    <view class="subtitle">这些卡片用于补拍、核对和提问。草稿或经验卡不能直接证明工程合格或违规。</view>
+  </view>
+
+  <view class="filter-card">
+    <input class="search-input" value="{{query}}" bindinput="onQuery" placeholder="搜索材料、现象或检查动作" />
+    <picker mode="selector" range="{{stages}}" value="{{stageIndex}}" bindchange="onStage">
+      <view class="stage-picker">{{stages[stageIndex]}}⌄</view>
+    </picker>
+  </view>
+  <view class="meta result-count">{{cards.length}} 张知识卡</view>
+
+  <view wx:if="{{cards.length}}">
+    <view class="card knowledge-card interactive-card" wx:for="{{cards}}" wx:key="id" data-id="{{item.id}}" bindtap="openCard">
+      <view class="row">
+        <view class="stage-label">{{item.stage}}</view>
+        <view class="pill {{item.status === 'verified' ? 'pill-green' : ''}}">{{item.statusLabel}}</view>
+      </view>
+      <view class="item-title">{{item.title}}</view>
+      <view class="meta object">{{item.object}} · {{item.tagText}}</view>
+      <view class="phenomenon">{{item.phenomenon}}</view>
+    </view>
+  </view>
+  <view wx:else class="empty card">没有匹配的知识卡。请缩短关键词或切换工序；未检索到时应明确资料不足。</view>
+
+  <view wx:if="{{selectedCard}}" class="sheet-mask" bindtap="closeCard">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeCard">关闭</view></view>
+      <view class="row"><view class="pill pill-green">{{selectedCard.stage}}</view><view class="pill">{{selectedCard.statusLabel}}</view></view>
+      <view class="detail-title">{{selectedCard.title}}</view>
+      <view class="detail-section">
+        <view class="detail-heading">可见现象 / 使用场景</view>
+        <view class="detail-text">{{selectedCard.phenomenon}}</view>
+      </view>
+      <view class="detail-section">
+        <view class="detail-heading">检查步骤</view>
+        <view wx:for="{{selectedCard.checkSteps}}" wx:for-item="step" wx:key="*this" class="number-row">
+          <view class="number">{{index + 1}}</view><view class="detail-text">{{step}}</view>
+        </view>
+      </view>
+      <view class="detail-section">
+        <view class="detail-heading">建议保留的证据</view>
+        <view class="chip-wrap"><view wx:for="{{selectedCard.evidence}}" wx:for-item="evidence" wx:key="*this" class="evidence-chip">{{evidence}}</view></view>
+      </view>
+      <view class="detail-section">
+        <view class="detail-heading">下一步建议</view>
+        <view wx:for="{{selectedCard.suggestions}}" wx:for-item="suggestion" wx:key="*this" class="bullet-row">• {{suggestion}}</view>
+      </view>
+      <view class="source-box">
+        <view class="meta">来源与版本</view>
+        <view class="source-title">{{selectedCard.sourceTitle}}</view>
+        <view class="meta">{{selectedCard.versionDate}}</view>
+      </view>
+      <button class="secondary" bindtap="copySource">{{selectedCard.sourceUrl ? '复制来源链接' : '来源待进一步核验'}}</button>
+    </view>
+  </view>
+</view>

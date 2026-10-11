@@ -1,0 +1,9 @@
+{
+  "currency": "CNY",
+  "effectiveAt": "2026-09-10T12:00:00+08:00; checked 2026-09-26; weekday peak 09:00-12:00 and 14:00-18:00 Asia/Shanghai",
+  "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+  "cacheHitInputPerMillion": 0.04,
+  "cacheMissInputPerMillion": 2,
+  "outputPerMillion": 8
+}
+

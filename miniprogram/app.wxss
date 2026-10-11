@@ -1,0 +1,115 @@
+page {
+  --ink: #1d1d1f;
+  --ink-soft: #3a3a3c;
+  --muted: #6e6e73;
+  --paper: #ffffff;
+  --canvas: #f4f5f3;
+  --card: #ffffff;
+  --blue: #0a6cff;
+  --blue-soft: #eaf2ff;
+  --green: #0071e3;
+  --green-dark: #005bb5;
+  --green-soft: #e8f2ff;
+  --amber: #b25b00;
+  --amber-soft: #fff4e5;
+  --danger: #d70015;
+  --danger-soft: #fff0f1;
+  --success: #248a3d;
+  --success-soft: #edf8f0;
+  --warning: #8a5200;
+  --warning-soft: #fff6e8;
+  --line: #e5e5ea;
+  --line-strong: #d1d1d6;
+  --surface-muted: #f2f2f7;
+  --surface-soft: #fafafa;
+  --surface-warm: #fbfbfd;
+  --overlay: rgba(0, 0, 0, .24);
+  --shadow-card: none;
+  --shadow-raised: 0 18rpx 52rpx rgba(24, 31, 27, .13);
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.page { box-sizing: border-box; width: 100%; max-width: 100vw; min-height: 100vh; overflow-x: hidden; padding: 40rpx 32rpx calc(88rpx + env(safe-area-inset-bottom)); }
+.hero { margin: 8rpx 0 30rpx; }
+.utility-header { box-sizing: border-box; position: relative; margin: 0 0 34rpx; padding: 38rpx 34rpx 34rpx; overflow: hidden; border: 1rpx solid var(--line); border-radius: 30rpx; background: #fff; }
+.utility-header::after { position: absolute; right: 34rpx; bottom: 0; left: 34rpx; height: 5rpx; border-radius: 99rpx 99rpx 0 0; background: #0071e3; content: ""; opacity: .88; }
+.utility-header .eyebrow { color: #0071e3; font-size: 21rpx; font-weight: 650; letter-spacing: 1.5rpx; }
+.utility-header .title { max-width: 620rpx; margin-top: 14rpx; color: #1d1d1f; font-size: 48rpx; font-weight: 730; line-height: 1.16; letter-spacing: -1rpx; }
+.utility-header .subtitle { max-width: 640rpx; margin-top: 14rpx; color: #6e6e73; font-size: 24rpx; line-height: 1.65; }
+.utility-header-compact { margin-bottom: 24rpx; padding-top: 30rpx; padding-bottom: 28rpx; }
+.utility-header-compact .title { font-size: 43rpx; }
+.eyebrow { color: var(--green); font-size: 23rpx; font-weight: 600; letter-spacing: 1rpx; }
+.title { font-size: 52rpx; font-weight: 700; line-height: 1.2; margin-top: 12rpx; word-break: break-word; letter-spacing: -1rpx; }
+.subtitle { color: var(--muted); line-height: 1.65; margin-top: 12rpx; }
+.card { box-sizing: border-box; min-width: 0; background: var(--card); border: 1rpx solid var(--line); border-radius: 26rpx; padding: 30rpx; margin-bottom: 24rpx; box-shadow: var(--shadow-card); }
+.section-title { max-width: 100%; margin-bottom: 20rpx; overflow-wrap: anywhere; color: var(--ink); font-size: 32rpx; font-weight: 700; line-height: 1.3; word-break: break-word; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.meta { color: var(--muted); font-size: 24rpx; line-height: 1.5; }
+.label { color: var(--muted); font-size: 24rpx; margin-bottom: 10rpx; }
+.input, .textarea, .picker { background: #fff; border: 1rpx solid var(--line-strong); border-radius: 20rpx; padding: 24rpx; margin-bottom: 24rpx; box-sizing: border-box; width: 100%; color: var(--ink); }
+/* Native input has a small built-in height in WeChat. Padding it like a view
+   collapses the editable line and clips glyphs, so give single-line fields an
+   explicit content box and vertical rhythm. */
+input.input { display: block; height: 88rpx; min-height: 88rpx; padding: 0 24rpx; font-size: 28rpx; line-height: 88rpx; }
+.input-placeholder { color: #8e8e93; line-height: 88rpx; }
+.input:focus, .textarea:focus { border-color: var(--green); background: #fff; }
+.input[disabled], .textarea[disabled], .picker[disabled] { color: var(--muted); opacity: .72; }
+.textarea { min-height: 180rpx; }
+.primary, .secondary, .danger { box-sizing: border-box; min-height: 88rpx; border-radius: 20rpx; font-size: 28rpx; font-weight: 650; line-height: 88rpx; padding: 0 32rpx; }
+.primary { background: var(--green); color: white; box-shadow: none; }
+.secondary { border: 1rpx solid var(--line-strong); background: #fff; color: var(--ink); }
+.danger { background: var(--danger-soft); color: var(--danger); }
+.primary[disabled], .secondary[disabled], .danger[disabled] { opacity: .46; }
+.primary:active, .secondary:active, .danger:active { opacity: .78; transform: translateY(1rpx); }
+.fab { position: fixed; right: 28rpx; bottom: calc(28rpx + env(safe-area-inset-bottom)); background: var(--green); color: white; border-radius: 999rpx; padding: 0 34rpx; line-height: 88rpx; box-shadow: 0 12rpx 32rpx rgba(0,113,227,.2); font-weight: 650; }
+.pill { display: inline-block; border-radius: 999rpx; padding: 8rpx 18rpx; font-size: 22rpx; background: #efede6; color: var(--muted); }
+.pill-green { background: var(--green-soft); color: var(--green); }
+.pill-amber { background: var(--amber-soft); color: var(--amber); }
+.divider { height: 1rpx; background: var(--line); margin: 22rpx 0; }
+.empty { text-align: center; color: var(--muted); padding: 72rpx 28rpx; line-height: 1.7; }
+.action-link { min-height: 48rpx; color: var(--green); font-weight: 650; line-height: 48rpx; }
+.action-link:active { opacity: .62; }
+.readonly-banner { background: var(--amber-soft); color: #80501b; border: 1rpx solid #eed9b5; border-radius: 18rpx; padding: 18rpx 22rpx; margin: -10rpx 0 26rpx; font-size: 24rpx; line-height: 1.6; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 24rpx; margin: 34rpx 2rpx 16rpx; }
+.section-head .section-title { margin: 0; }
+.section-kicker { color: var(--muted); font-size: 23rpx; margin-top: 4rpx; }
+.inline-notice { border-radius: 16rpx; padding: 18rpx 20rpx; background: var(--surface-muted); color: var(--ink-soft); font-size: 24rpx; line-height: 1.6; }
+.notice-success { border: 1rpx solid #cfe1d7; background: var(--success-soft); color: var(--success); }
+.notice-warning { border: 1rpx solid #ecd5ad; background: var(--warning-soft); color: var(--warning); }
+.notice-danger { border: 1rpx solid #e8cfc7; background: var(--danger-soft); color: var(--danger); }
+.empty-title { margin-bottom: 10rpx; color: var(--ink); font-weight: 700; }
+.no-project { padding: 48rpx 30rpx; text-align: center; }
+.no-project-button { margin-top: 28rpx; }
+.form-tip { margin: 18rpx 0; color: var(--muted); font-size: 24rpx; line-height: 1.6; }
+.field-label { margin: 26rpx 0 10rpx; color: var(--muted); font-size: 25rpx; }
+.inline-empty { padding: 22rpx; border-radius: 16rpx; background: var(--surface-muted); color: var(--muted); line-height: 1.6; }
+.text-button { min-height: 76rpx; margin-top: 14rpx; background: transparent; color: var(--muted); font-size: 26rpx; line-height: 76rpx; }
+.sheet-mask { position: fixed; inset: 0; display: flex; align-items: flex-end; z-index: 9; background: var(--overlay); }
+.action-mask { z-index: 10; }
+.sheet { box-sizing: border-box; position: relative; width: 100%; max-height: 90vh; overflow-y: auto; padding: 18rpx 30rpx calc(48rpx + env(safe-area-inset-bottom)); border-radius: 32rpx 32rpx 0 0; background: #fff; box-shadow: var(--shadow-raised); }
+.sheet-toolbar { position: relative; min-height: 72rpx; margin-bottom: 12rpx; }
+.sheet-handle { position: absolute; top: 10rpx; left: 50%; width: 78rpx; height: 8rpx; border-radius: 99rpx; background: #c5cbc6; transform: translateX(-50%); }
+.sheet-close { position: absolute; top: -4rpx; right: 0; min-width: 96rpx; min-height: 72rpx; color: var(--green); font-size: 24rpx; font-weight: 650; line-height: 72rpx; text-align: right; }
+.sheet-close:active { opacity: .58; }
+.form-grid, .review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16rpx; }
+.form-grid > view, .review-grid > view, .row > view { min-width: 0; }
+.interactive-card:active { border-color: #b7cec5; background: var(--surface-soft); transform: translateY(1rpx); }
+.wrap-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+button::after { border: none; }
+
+@media (max-width: 360px) {
+  .page { padding-right: 22rpx; padding-left: 22rpx; }
+  .title { font-size: 43rpx; }
+  .card { padding: 24rpx; }
+  .form-grid, .review-grid { grid-template-columns: 1fr; gap: 0; }
+  .utility-header { padding: 30rpx 26rpx; border-radius: 26rpx; }
+  .utility-header .title { font-size: 42rpx; }
+}

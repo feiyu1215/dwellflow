@@ -1,0 +1,9 @@
+node_modules/
+miniprogram_npm/
+.env*
+!.env.example
+project.private.config.json
+coverage/
+data/
+evaluation/reports/
+evaluation/pricing.local.json

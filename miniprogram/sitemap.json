@@ -1,0 +1,5 @@
+{
+  "desc": "装修同步小程序页面索引",
+  "rules": [{ "action": "disallow", "page": "*" }]
+}
+

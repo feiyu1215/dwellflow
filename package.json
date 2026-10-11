@@ -1,0 +1,24 @@
+{
+  "name": "renovation-sync-miniprogram",
+  "version": "0.1.0",
+  "private": true,
+  "description": "装修同步微信小程序",
+  "scripts": {
+    "test": "node --import ./tests/register-extensionless-ts.mjs --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "server": "node --env-file-if-exists=.env --experimental-strip-types server/main.ts",
+    "eval:material": "node --env-file-if-exists=.env --experimental-strip-types server/material-evaluation-cli.ts",
+    "eval:m6b": "node --env-file-if-exists=.env --experimental-strip-types server/m6b-evaluation-cli.ts",
+    "eval:m6c": "node --env-file-if-exists=.env --experimental-strip-types server/m6c-evaluation-cli.ts",
+    "eval:m6d": "node --env-file-if-exists=.env --experimental-strip-types server/m6d-evaluation-cli.ts",
+    "eval:m6e": "node --env-file-if-exists=.env --experimental-strip-types server/m6e-evaluation-cli.ts",
+    "rescore:m6c": "node --experimental-strip-types server/m6c-evaluation-rescore-cli.ts",
+    "merge:material-eval": "node --experimental-strip-types server/material-evaluation-merge-cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "miniprogram-api-typings": "^5.2.3",
+    "typescript": "^5.9.2"
+  },
+  "type": "module"
+}

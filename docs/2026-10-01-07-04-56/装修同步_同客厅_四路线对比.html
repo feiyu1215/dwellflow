@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>装修同步 · 同一间客厅 · 四条路线对比</title>
+<style>
+:root{
+  --bg:#F6F5F2; --surface:#FFFFFF; --ink:#1C1B19; --sub:#6F6B63; --faint:#9C978E;
+  --line:#E7E4DE; --accent:#0E7C66; --accent-soft:#E7F1ED; --learned:#14B8A6;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{background:#E9E7E2;font-family:"PingFang SC","Noto Sans SC",sans-serif;color:var(--ink);padding:36px 20px}
+.wrap{max-width:1020px;margin:0 auto}
+h1{font-size:26px;font-weight:800;letter-spacing:.2px}
+.sub{color:var(--sub);font-size:14px;margin-top:6px;line-height:1.7}
+.sub b{color:var(--ink)}
+.grid{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
+.phead{display:flex;align-items:center;gap:8px;padding:12px 16px 0}
+.route{font-size:11px;font-weight:700;color:#fff;background:var(--accent);border-radius:999px;padding:3px 10px}
+.route.alt{background:var(--faint)}
+.route.star{background:#B0703F}
+.pname{font-size:14px;font-weight:700}
+.pvis{margin:10px 16px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#FBFAF7}
+.pvis svg{display:block;width:100%;height:auto}
+.pvis img{display:block;width:100%;height:auto}
+.pdesc{padding:10px 16px 14px;font-size:12.5px;color:var(--sub);line-height:1.75}
+.pdesc b{color:var(--ink)}
+.tag{display:inline-block;font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin:6px 6px 0 0;color:var(--sub);background:#FAF9F6}
+.note{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;font-size:13px;color:var(--sub);line-height:1.8}
+.note b{color:var(--ink)}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>同一间客厅 · 四条路线对比</h1>
+  <div class="sub">
+    目的：<b>先看见效果，再拍板路线</b>。六个格子是<b>同一组家具</b>（沙发 / 茶几 / 电视柜 / 落地灯 / 绿植 / 大窗）在不同路线下的样子。
+    D 是图纸层，A 是现成素材，B 是离线渲染，C 是手绘零件。看完你只需要回答一个问题：<b>巡场里的房间，你想让它是哪一格的感觉。</b>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="note">
+    <b>关于两张照片级预览图</b>：路线 B 的真实观感与路线 C+ 的高清手稿，本次用 AI 生成了<b>风格预览</b>（消耗约 10–20 积分，仅此一次）。
+    它们只是"给你看效果用"的示意图，<b>不是最终素材</b>——正式资产走 <b>CC0 素材 + Blender 正交相机批量渲染</b>，观感以预览为准、版权干净、全套一个坐标系。
+    小程序端无论哪条路线，<b>吃的都是 2D 成品</b>，不引入任何 3D runtime。
+  </div>
+</div>
+
+<script>
+/* ================= 共用工具 ================= */
+function shade(hex,f){
+  var n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(Math.min(255,r*f));g=Math.round(Math.min(255,g*f));b=Math.round(Math.min(255,b*f));
+  return 'rgb('+r+','+g+','+b+')';
+}
+var C30=Math.cos(Math.PI/6),S30=0.5,SC=34,OX=95,OY=140;
+function iso(x,y,z){return [OX+(x-y)*C30*SC, OY+(x+y)*S30*SC-z*SC];}
+function face(pts,fill){
+  return '<polygon points="'+pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ')+'" fill="'+fill+'"/>';
+}
+function box(x,y,z,w,d,h,base){
+  var A=iso(x,y,z+h),B=iso(x+w,y,z+h),Cp=iso(x+w,y+d,z+h),D=iso(x,y+d,z+h);
+  var B2=iso(x+w,y,z),C2=iso(x+w,y+d,z),D2=iso(x,y+d,z);
+  return face([A,B,Cp,D],base)+face([B,Cp,C2,B2],shade(base,0.85))+face([D,Cp,C2,D2],shade(base,0.7));
+}
+function shadow(x,y,w,d,k){
+  var p=iso(x+w/2,y+d/2,0),rx=(w+d)/2*SC*0.55,ry=(w+d)/2*S30*SC*0.38;
+  return '<ellipse cx="'+p[0].toFixed(1)+'" cy="'+(p[1]+4).toFixed(1)+'" rx="'+rx.toFixed(1)+'" ry="'+ry.toFixed(1)+'" fill="rgba(28,27,25,'+(k||0.10)+')"/>';
+}
+
+/* ================= 场景（同一份几何，两种画法） ================= */
+function sceneSVG(style){
+  var s='';
+  var W=640,H=470;
+  if(style==='render'){
+    s+='<defs><linearGradient id="fl" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="#E8DCC8"/><stop offset="1" stop-color="#D9C9AE"/></linearGradient>'
+      +'<radialGradient id="bg2" cx="0.5" cy="0.35" r="0.9">'
+      +'<stop offset="0" stop-color="#FBF8F2"/><stop offset="1" stop-color="#EFE9DD"/></radialGradient></defs>';
+    s+='<rect width="640" height="470" fill="url(#bg2)"/>';
+  }else{
+    s+='<rect width="640" height="470" fill="'+(style==='flat'?'#F1EFE9':'#FBFAF7')+'"/>';
+  }
+  /* 地台 */
+  s+=box(-0.4,-0.4,-0.55,10.8,8.8,0.55, style==='flat'?'#E2DCCE':'#CBB894');
+  /* 地板 */
+  if(style==='render') s+=face([iso(0,0,0),iso(10,0,0),iso(10,8,0),iso(0,8,0)],'url(#fl)');
+  else s+=face([iso(0,0,0),iso(10,0,0),iso(10,8,0),iso(0,8,0)], style==='flat'?'#EDE5D4':'#F3EDE0');
+  /* 地毯 */
+  if(style==='render') s+=shadow(2.7,1.7,3.2,2.6,0.08);
+  s+=box(2.8,1.8,0.02,3.0,2.4,0.06, style==='flat'?'#DDE9E4':'#E3EDE8');
+  /* 背墙 + 大窗 */
+  if(style==='render'){ s+=shadow(0,0,2.6,0.25,0.05); s+=shadow(5.6,0,4.4,0.25,0.05); }
+  s+=box(0,0,0,2.6,0.25,3.0,   style==='flat'?'#F4F1E9':'#EFE6D4');
+  s+=box(5.6,0,0,4.4,0.25,3.0, style==='flat'?'#F4F1E9':'#EFE6D4');
+  s+=box(2.6,0,0,3.0,0.12,0.5, style==='flat'?'#F4F1E9':'#EFE6D4');      /* 窗下墙 */
+  s+=box(2.6,0,2.5,3.0,0.12,0.5,style==='flat'?'#F4F1E9':'#EFE6D4');     /* 窗上墙 */
+  s+=box(2.66,0.05,0.5,2.88,0.06,2.0, style==='flat'?'#BFD8D2':'#A9CCC4');/* 玻璃 */
+  s+=box(2.6,0.02,1.42,3.0,0.1,0.1,'#FFFFFF');                            /* 中梃 */
+  /* 电视柜 + 电视 */
+  if(style==='render') s+=shadow(6.2,0.5,2.6,0.85,0.12);
+  s+=box(6.2,0.5,0,2.6,0.85,0.45, style==='flat'?'#D8B98F':'#C9A87C');
+  s+=box(7.35,0.55,0.45,0.5,0.35,0.28, style==='flat'?'#C9AA80':'#B8956A');
+  s+=box(6.75,0.62,0.85,1.9,0.12,1.05, style==='flat'?'#2A2926':'#1C1B19');
+  /* 沙发（靠左墙） */
+  if(style==='render') s+=shadow(0.7,1.0,1.7,3.1,0.14);
+  s+=box(0.7,1.0,0,0.42,3.1,1.18, style==='flat'?'#5FA492':'#4F8E7C');   /* 靠背 */
+  s+=box(1.12,1.0,0,1.1,3.1,0.52, style==='flat'?'#6FAE9C':'#5FA492');   /* 座体 */
+  s+=box(1.12,1.0,0.52,1.1,1.45,0.16, style==='flat'?'#E7F1ED':'#DCE9E4');/* 坐垫1 */
+  s+=box(1.12,2.62,0.52,1.1,1.48,0.16, style==='flat'?'#E7F1ED':'#DCE9E4');/* 坐垫2 */
+  s+=box(1.12,1.0,0,1.1,0.32,0.85, style==='flat'?'#5FA492':'#4F8E7C');  /* 扶手前 */
+  s+=box(1.12,3.78,0,1.1,0.32,0.85, style==='flat'?'#5FA492':'#4F8E7C'); /* 扶手后 */
+  /* 茶几 */
+  if(style==='render') s+=shadow(3.5,2.5,1.7,1.2,0.12);
+  s+=box(3.62,2.62,0.1,1.5,1.0,0.14, style==='flat'?'#C9AA80':'#B8956A');
+  s+=box(3.5,2.5,0.24,1.74,1.24,0.12, style==='flat'?'#D8B98F':'#C9A87C');
+  /* 落地灯 */
+  if(style==='render') s+=shadow(4.9,0.95,0.6,0.6,0.10);
+  s+=box(5.06,1.12,0,0.14,0.14,2.35, style==='flat'?'#6F6B63':'#4A4844');
+  s+=box(4.62,0.68,2.35,1.0,1.0,0.55, style==='flat'?'#F0E3C2':'#EBDDB9');
+  /* 绿植 */
+  if(style==='render') s+=shadow(0.8,6.2,0.9,0.9,0.12);
+  s+=box(0.85,6.3,0,0.75,0.75,0.5, style==='flat'?'#C08552':'#B0703F');
+  var potTop=iso(1.22,6.67,0.5);
+  s+='<ellipse cx="'+potTop[0]+'" cy="'+(potTop[1]-26)+'" rx="30" ry="26" fill="'+(style==='flat'?'#5E9968':'#4C8A5C')+'"/>';
+  s+='<ellipse cx="'+(potTop[0]-20)+'" cy="'+(potTop[1]-46)+'" rx="20" ry="17" fill="'+(style==='flat'?'#6FAB79':'#5C9E6C')+'"/>';
+  s+='<ellipse cx="'+(potTop[0]+18)+'" cy="'+(potTop[1]-50)+'" rx="18" ry="15" fill="'+(style==='flat'?'#548F5E':'#437A52')+'"/>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+}
+
+/* ================= D · 图纸层 ================= */
+function planSVG(){
+  var ink='#1C1B19',faint='#9C978E';
+  var s='<rect width="400" height="300" fill="#FFFFFF"/>';
+  /* 外墙双线 */
+  s+='<rect x="50" y="46" width="300" height="208" fill="none" stroke="'+ink+'" stroke-width="3.5"/>';
+  s+='<rect x="57" y="53" width="286" height="194" fill="none" stroke="'+ink+'" stroke-width="1.2"/>';
+  /* 门口（下墙开口 + 弧线） */
+  s+='<rect x="196" y="246" width="52" height="9" fill="#FFFFFF"/>';
+  s+='<path d="M196 251 A52 52 0 0 1 248 251" fill="none" stroke="'+faint+'" stroke-width="1.4" stroke-dasharray="4 3"/>';
+  s+='<line x1="196" y1="251" x2="196" y2="262" stroke="'+ink+'" stroke-width="2.4"/>';
+  /* 窗（上墙三线） */
+  s+='<rect x="120" y="44" width="90" height="9" fill="#FFFFFF"/>';
+  s+='<line x1="120" y1="50" x2="210" y2="50" stroke="'+ink+'" stroke-width="1.6"/>';
+  s+='<line x1="120" y1="47" x2="210" y2="47" stroke="'+faint+'" stroke-width="1"/>';
+  s+='<line x1="120" y1="53" x2="210" y2="53" stroke="'+faint+'" stroke-width="1"/>';
+  /* 家具符号 */
+  s+='<rect x="80" y="80" width="96" height="38" rx="4" fill="none" stroke="'+ink+'" stroke-width="1.6"/>';
+  s+='<line x1="80" y1="92" x2="176" y2="92" stroke="'+ink+'" stroke-width="1"/>';
+  s+='<rect x="130" y="140" width="64" height="32" rx="3" fill="none" stroke="'+ink+'" stroke-width="1.6"/>';
+  s+='<rect x="228" y="66" width="90" height="24" fill="none" stroke="'+ink+'" stroke-width="1.6"/>';
+  s+='<line x1="250" y1="70" x2="250" y2="86" stroke="'+ink+'" stroke-width="1"/>';
+  s+='<circle cx="290" cy="190" r="16" fill="none" stroke="'+ink+'" stroke-width="1.6"/>';
+  s+='<circle cx="290" cy="190" r="4" fill="'+ink+'"/>';
+  /* 标注 */
+  s+='<line x1="50" y1="30" x2="350" y2="30" stroke="'+faint+'" stroke-width="1"/>';
+  s+='<line x1="50" y1="26" x2="50" y2="34" stroke="'+faint+'" stroke-width="1"/>';
+  s+='<line x1="350" y1="26" x2="350" y2="34" stroke="'+faint+'" stroke-width="1"/>';
+  s+='<text x="200" y="24" text-anchor="middle" font-size="11" fill="'+ink+'" font-family="PingFang SC,sans-serif">4.20 m</text>';
+  s+='<line x1="32" y1="46" x2="32" y2="254" stroke="'+faint+'" stroke-width="1"/>';
+  s+='<text x="20" y="154" text-anchor="middle" font-size="11" fill="'+ink+'" font-family="PingFang SC,sans-serif" transform="rotate(-90 20 154)">3.60 m</text>';
+  s+='<text x="200" y="180" text-anchor="middle" font-size="13" fill="'+ink+'" font-family="PingFang SC,sans-serif">客厅</text>';
+  s+='<circle cx="356" cy="282" r="12" fill="none" stroke="'+faint+'" stroke-width="1.2"/>';
+  s+='<path d="M356 274 L359 282 L356 280 L353 282 Z" fill="'+ink+'"/>';
+  return '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+}
+
+/* ================= C · 手绘线稿 ================= */
+function sketchSVG(){
+  var ink='#1C1B19';
+  var g='';
+  g+='<rect x="30" y="24" width="150" height="96" rx="4" fill="#EDEAE3" transform="skewY(-4)"/>';
+  g+='<line x1="105" y1="27" x2="105" y2="116" stroke-width="2" transform="skewY(-4)"/>';
+  /* 沙发 */
+  g+='<rect x="46" y="150" width="128" height="46" rx="9" fill="#FBFAF7"/>';
+  g+='<line x1="46" y1="172" x2="174" y2="172" stroke-width="2"/>';
+  g+='<line x1="88" y1="150" x2="88" y2="196" stroke-width="2"/>';
+  g+='<rect x="36" y="142" width="14" height="54" rx="6" fill="#FBFAF7"/>';
+  g+='<rect x="170" y="142" width="14" height="54" rx="6" fill="#FBFAF7"/>';
+  /* 茶几 */
+  g+='<rect x="204" y="176" width="66" height="30" rx="5" fill="#FBFAF7"/>';
+  g+='<line x1="214" y1="206" x2="214" y2="218" stroke-width="2"/>';
+  g+='<line x1="260" y1="206" x2="260" y2="218" stroke-width="2"/>';
+  /* 电视柜 */
+  g+='<rect x="252" y="96" width="76" height="26" rx="4" fill="#FBFAF7"/>';
+  g+='<rect x="266" y="52" width="48" height="34" rx="3" fill="#EDEAE3"/>';
+  /* 落地灯 */
+  g+='<line x1="222" y1="218" x2="222" y2="120" stroke-width="2"/>';
+  g+='<path d="M208 120 L236 120 L230 100 L214 100 Z" fill="#FBFAF7"/>';
+  /* 绿植 */
+  g+='<rect x="312" y="168" width="26" height="22" rx="3" fill="#FBFAF7"/>';
+  g+='<path d="M325 168 q-14 -20 -2 -34 M325 168 q14 -18 4 -36 M325 168 q-2 -26 12 -30" stroke-width="2"/>';
+  /* 地平线 */
+  g+='<line x1="24" y1="220" x2="360" y2="220" stroke="#9C978E" stroke-width="1.6"/>';
+  return '<svg viewBox="0 0 384 240" xmlns="http://www.w3.org/2000/svg">'
+    +'<defs><filter id="rg-s" x="-15%" y="-15%" width="130%" height="130%">'
+    +'<feTurbulence type="fractalNoise" baseFrequency="0.024" numOctaves="4" seed="7" result="n"/>'
+    +'<feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter></defs>'
+    +'<rect width="384" height="240" fill="#FBFAF7"/>'
+    +'<g filter="url(#rg-s)" stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">'+g+'</g></svg>';
+}
+
+/* ================= 面板 ================= */
+var IMG_B='assets_preview/Isometric_3D_cutaway_render_of_2026-10-02T10-03-34.png';
+var IMG_C='assets_preview/Hand_drawn_architectural_manus_2026-10-02T10-03-35.png';
+
+var panels=[
+  {r:'D', alt:1, name:'图纸层 · 户型生成器产出风格', vis:planSVG(),
+   d:'<b>来源 openPlan3D（MIT）</b>。选"三室一厅"→参数化出几何正确的户型 SVG。它不是场景图，是<b>选户型之后、进房间之前</b>的"图纸"。线条交给我们的视觉语言接管。',
+   t:['配合度：高（限图纸层）','代价：低','授权：MIT']},
+  {r:'A', alt:1, name:'现成等距整套 · 扁平矢量风', vis:sceneSVG('flat'),
+   d:'<b>来源 Isometric.online（MIT）/ DrawKit / ManyPixels</b>。今天就能换上，矢量可放大。<b>但整套是别人的</b>：房间组合、户型种类由不得我们，加一种户型就断档。',
+   t:['配合度：中','精度：中','代价：最低','定位：过渡救急']},
+  {r:'B', star:1, name:'离线渲染 · SVG 仿渲染感', vis:sceneSVG('render'),
+   d:'同一份几何，加上<b>接触阴影 + 光照渐变</b>——这就是"渲染感"的下限。真正上限看下一格。原理：<b>CC0 素材 → Blender 正交相机批量渲 → 小程序只吃 2D 成品</b>，无 3D runtime。',
+   t:['配合度：最高','精度上限：最高','代价：1–2 天搭管线']},
+  {r:'B', star:1, name:'离线渲染 · 真实观感预览（AI 示意）', vis:'<img src="'+IMG_B+'" alt="等距渲染客厅">',
+   d:'这就是<b>"高精度更牛逼的素材"的目标观感</b>：全套同一光源、同一坐标系、任意组合房间。本次为 AI 风格示意（消耗少量积分），正式资产用 CC0 家具在 Blender 里渲，<b>观感照这个标准、版权干净</b>。',
+   t:['定位：终稿主力','授权：CC0','一致性：同一渲染管线']},
+  {r:'C', alt:1, name:'手绘零件 · 线稿风（现原型风格）', vis:sketchSVG(),
+   d:'<b>来源 Kitbitz Interior（CC0）/ Open Doodles</b>。单件好看，但没有房子级的空间坐标系——<b>这正是"手绘稿和交互不配合"的根因</b>。定位是零件：空状态插画、AI 入口小物、引导图，<b>不当主场景</b>。',
+   t:['配合度：低（主场景）/ 高（零件）','代价：低','授权：CC0']},
+  {r:'C+', alt:1, name:'手稿风高清观感预览（AI 示意）', vis:'<img src="'+IMG_C+'" alt="手稿风客厅">',
+   d:'你之前提的<b>"中世纪机械手稿"</b>方向的高清样子：钢笔排线 + 羊皮纸底。氛围极强，但同样<b>没有空间坐标系</b>，且线稿密度高、缩到小图会糊。适合做<b>章节页/引导页的氛围图</b>，不做巡场主体。',
+   t:['定位：氛围图（非主体）','代价：低','风险：小尺寸发糊']}
+];
+
+var h='';
+panels.forEach(function(p){
+  h+='<div class="panel"><div class="phead">'
+    +'<span class="route'+(p.alt?' alt':(p.star?' star':''))+'">路线 '+p.r+'</span>'
+    +'<span class="pname">'+p.name+'</span></div>'
+    +'<div class="pvis">'+p.vis+'</div>'
+    +'<div class="pdesc">'+p.d+'<br>';
+  p.t.forEach(function(t){h+='<span class="tag">'+t+'</span>';});
+  h+='</div></div>';
+});
+document.getElementById('grid').innerHTML=h;
+</script>
+</body>
+</html>

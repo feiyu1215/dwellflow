@@ -1,0 +1,39 @@
+<view class="quick-record-page">
+  <view class="quick-nav"><view class="quick-back" bindtap="goBack">‹ 返回</view><view>快速记录</view><view class="quick-state">{{screen === 'review' ? '待检查' : '未提交'}}</view></view>
+  <view wx:if="{{!hasProject}}" class="quick-empty"><view class="empty-mark">⌂</view><view class="empty-title">还没有当前项目</view><view class="empty-copy">先创建或选择项目，再记录现场情况。</view><button class="primary" bindtap="manageProject">进入项目管理</button></view>
+  <view wx:elif="{{readOnly}}" class="quick-empty"><view class="empty-mark">—</view><view class="empty-title">归档项目只能查看</view><view class="empty-copy">重新打开项目后才能新增现场记录。</view><button class="secondary" bindtap="goBack">返回项目</button></view>
+  <scroll-view wx:else class="quick-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="quick-body">
+      <view class="quick-kicker">从现场事实开始</view>
+      <view class="quick-title">{{screen === 'review' ? '检查后再继续' : '现在发生了什么？'}}</view>
+      <view class="quick-copy">{{screen === 'review' ? '这是本地整理草稿，还没有创建正式记录。' : '先按你的说法记录；本阶段只做本地整理，不调用 AI。'}}</view>
+      <view class="quick-context"><text>{{projectName}}</text><text>{{rooms[roomIndex]}}</text><text>{{stages[stageIndex]}}</text></view>
+      <view wx:if="{{originLabel}}" class="quick-origin"><view></view><text>{{originLabel}} · 已带入当前位置</text></view>
+
+      <block wx:if="{{screen === 'editing'}}">
+        <view class="quick-card source-card">
+          <view class="quick-label"><text>你的原话</text><text>{{sourceHint}}</text></view>
+          <textarea class="quick-source" maxlength="5000" auto-height value="{{originalText}}" bindinput="onOriginalInput" placeholder="例如：今天师傅说厨房水管试压做完了，我还没看到结果。" />
+        </view>
+        <view class="quick-boundary">保存草稿不会推进阶段，也不会把转述变成验收结论。</view>
+        <button class="primary quick-primary" bindtap="prepareReview">整理成本地草稿</button>
+        <button class="secondary quick-secondary" bindtap="continueManual">直接用人工表单继续</button>
+      </block>
+
+      <block wx:else>
+        <view class="quick-source-quote"><text>原话</text><view>{{originalText}}</view></view>
+        <view class="quick-card review-card">
+          <view class="quick-field"><view class="quick-label"><text>记录标题</text><text>可修改</text></view><input class="quick-input" value="{{title}}" bindinput="onTitleInput" placeholder="一句话标题" /></view>
+          <view class="quick-field"><view class="quick-label"><text>事实描述</text><text>保持转述与未知</text></view><textarea class="quick-note" auto-height value="{{note}}" bindinput="onNoteInput" placeholder="记录看到或听到的事实" /></view>
+          <view class="quick-field"><view class="quick-label"><text>空间</text><text>当前位置默认</text></view><picker mode="selector" range="{{rooms}}" value="{{roomIndex}}" bindchange="onRoom"><view class="quick-picker">{{rooms[roomIndex]}}⌄</view></picker></view>
+          <view class="quick-field"><view class="quick-label"><text>发生日期</text><text>可修改</text></view><picker mode="date" value="{{occurredDate}}" bindchange="onOccurredDate"><view class="quick-picker">{{occurredDate}}⌄</view></picker></view>
+          <view class="quick-field"><view class="quick-label"><text>施工阶段</text><text>项目当前值</text></view><picker mode="selector" range="{{stages}}" value="{{stageIndex}}" bindchange="onStage"><view class="quick-picker">{{stages[stageIndex]}}⌄</view></picker></view>
+        </view>
+        <view class="quick-notice">当前整理不会判断“是否合格”。继续后仍由原记录页面完成正式保存。</view>
+        <button class="primary quick-primary" bindtap="continueManual">检查完成，进入保存</button>
+        <button class="secondary quick-secondary" bindtap="backToEditing">返回修改原话</button>
+      </block>
+    </view>
+  </scroll-view>
+</view>
+

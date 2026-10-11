@@ -1,0 +1,163 @@
+<view wx:if="{{view === 'scene'}}" class="page scene-gateway">
+  <view class="gateway-head">
+    <view class="gateway-topline"><view class="eyebrow">我的装修项目</view><view class="gateway-profile" bindtap="openSettings">我</view></view>
+    <view class="title">{{sceneCount ? '回到正在发生的地方' : '从一个装修项目开始'}}</view>
+    <view class="subtitle">每个房子独立保存流程、资料、成员权限与 AI 上下文。</view>
+  </view>
+
+  <view wx:if="{{sceneCount > 1}}" class="gateway-tools">
+    <view class="gateway-search">
+      <text class="search-icon">⌕</text>
+      <input value="{{searchText}}" bindinput="onGatewaySearch" placeholder="搜索项目名称或阶段" confirm-type="search" />
+      <text wx:if="{{searchText}}" class="search-clear" bindtap="clearGatewaySearch">清除</text>
+    </view>
+    <view class="gateway-toolbar">
+      <view class="gateway-filters">
+        <view class="filter-chip {{gatewayFilter === 'active' ? 'active' : ''}}" data-filter="active" bindtap="setGatewayFilter">进行中 {{activeSceneCount}}</view>
+        <view wx:if="{{archivedSceneCount}}" class="filter-chip {{gatewayFilter === 'archived' ? 'active' : ''}}" data-filter="archived" bindtap="setGatewayFilter">已归档 {{archivedSceneCount}}</view>
+        <view wx:if="{{archivedSceneCount}}" class="filter-chip {{gatewayFilter === 'all' ? 'active' : ''}}" data-filter="all" bindtap="setGatewayFilter">全部</view>
+      </view>
+      <view class="sort-action" bindtap="toggleGatewaySort">{{gatewaySort === 'attention' ? '待确认优先' : '最近更新优先'}}⌄</view>
+    </view>
+  </view>
+
+  <view wx:if="{{revokedSceneCount}}" class="access-change">
+    <view class="access-mark">!</view>
+    <view><view class="access-title">有 {{revokedSceneCount}} 个项目的访问权限已变化</view><view class="access-copy">已隐藏项目名称、阶段、数量和最近活动。</view></view>
+  </view>
+
+  <view wx:if="{{scenes.length}}" class="scene-field {{sceneLayout}}">
+    <view class="{{item.bubbleClass}} {{item.selected ? 'selected' : ''}} {{item.readonly ? 'readonly' : ''}}" wx:for="{{scenes}}" wx:key="projectId" data-id="{{item.projectId}}" bindtap="chooseScene">
+      <view class="scene-card-top"><view class="scene-stage">{{item.stage}}</view><view wx:if="{{item.readonly}}" class="readonly-badge">只读</view><view wx:elif="{{item.selected}}" class="current-badge gateway-current">当前</view></view>
+      <view class="scene-name">{{item.name}}</view>
+      <view class="scene-owner">负责人 {{item.ownerName}}</view>
+      <view class="scene-card-bottom"><view class="scene-attention">{{item.attentionLabel}}</view><view class="scene-updated">{{item.updatedLabel}}</view></view>
+    </view>
+  </view>
+  <view wx:elif="{{sceneCount}}" class="gateway-filter-empty">
+    <view class="empty-symbol">⌕</view>
+    <view class="empty-title">没有符合条件的项目</view>
+    <view class="empty-copy">调整搜索词或切换项目状态后再看。</view>
+    <view class="empty-reset" bindtap="resetGatewayFilters">重置筛选</view>
+  </view>
+  <view wx:else class="gateway-zero">
+    <view class="zero-mark"><view class="zero-roof"></view><view class="zero-base"></view></view>
+    <view class="empty-title">还没有可进入的项目</view>
+    <view class="empty-copy">创建第一个装修项目后，从当前流程开始记录。</view>
+  </view>
+  <view wx:if="{{sceneCount > 1}}" class="gateway-tip">选择项目后进入当前流程；切换项目不会带入另一个项目的资料和草稿。</view>
+  <button class="primary gateway-button" bindtap="manageProject">{{sceneCount ? '管理或新建项目' : '创建第一个项目'}}</button>
+</view>
+
+<view wx:elif="{{view === 'overview' && project && overview}}" class="page overview-page r7-overview-page">
+  <scroll-view class="r7-overview-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="r7-overview-intro">
+      <view class="r7-overview-topline">
+        <view class="r7-phase-pill">当前 · {{project.stage}}</view>
+        <view class="r7-attention-link" bindtap="openIssues"><text>{{attentionCount}}</text><view>与你有关</view></view>
+      </view>
+      <view class="r7-project-name">{{project.name}}</view>
+      <view class="r7-now-line"><view></view><text>{{overviewLead}}</text></view>
+    </view>
+
+    <view wx:if="{{overview.readonly}}" class="r7-archived-banner">此项目已归档。你仍可查看资料，但不能继续推进业务。</view>
+
+    <view wx:if="{{topologySpaces.length}}" class="r7-topology-wrap">
+      <view class="r7-topology">
+        <view class="r7-topology-caption"><view></view><text>空间拓扑 · 非比例示意 · 虚线表示关系未确认</text></view>
+        <view class="r7-topology-canvas">
+          <view wx:if="{{topologySpaces.length > 1}}" class="r7-edge edge-a"></view>
+          <view wx:if="{{topologySpaces.length > 2}}" class="r7-edge edge-b"></view>
+          <view wx:if="{{topologySpaces.length > 2}}" class="r7-edge edge-c"></view>
+          <view wx:if="{{topologySpaces.length > 3}}" class="r7-edge edge-d unknown"></view>
+          <view
+            class="r7-room-node {{item.topologyState}} {{item.selected ? 'selected' : ''}}"
+            wx:for="{{topologySpaces}}"
+            wx:key="id"
+            style="{{item.topologyStyle}}"
+            data-id="{{item.id}}"
+            bindtap="selectOverviewSpace"
+          >
+            <view class="r7-room-signal"></view>
+            <view class="r7-room-name">{{item.name}}</view>
+            <view class="r7-room-meta">{{item.issueCount ? item.issueCount + ' 项待核查' : (item.evidenceCount ? item.evidenceCount + ' 份资料' : '尚无现场资料')}}</view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{topologyOverflowCount}}" class="r7-topology-overflow">另有 {{topologyOverflowCount}} 个空间，可从“空间清单”查看。</view>
+    </view>
+
+    <view wx:if="{{selectedOverviewSpace}}" class="r7-focus-sheet" data-id="{{selectedOverviewSpace.id}}" bindtap="enterSelectedSpace">
+      <view class="r7-focus-title"><text>{{selectedOverviewSpace.name}}</text><view>{{selectedOverviewSpace.issueCount ? selectedOverviewSpace.issueCount + ' 项待核查' : selectedOverviewSpace.stageStatusLabel}}</view></view>
+      <view class="r7-focus-fact">
+        <image wx:if="{{selectedOverviewSpace.previewAvailable}}" class="r7-focus-thumb" mode="aspectFill" src="{{selectedOverviewSpace.previewPath}}"></image>
+        <view wx:else class="r7-focus-thumb line-art illustrated-thumb">
+          <image mode="aspectFill" src="{{selectedOverviewSpace.illustrationPath}}"></image>
+          <text>空间示意</text>
+        </view>
+        <view class="r7-focus-copy">
+          <text>{{selectedOverviewSpace.previewFileName || (selectedOverviewSpace.evidenceCount ? selectedOverviewSpace.evidenceCount + ' 份现场资料' : '尚无现场资料')}}</text>
+          <view>{{selectedOverviewSpace.previewEvidenceId ? selectedOverviewSpace.previewEvidenceId + ' · ' + selectedOverviewSpace.previewTimeLabel + '。资料存在不代表施工完成。' : '这里不使用图库或 AI 图片填空；拍摄后才形成证据。'}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="r7-overview-empty">
+      <view class="r7-empty-plan"><view></view><view></view><view></view></view>
+      <text>还没有正式空间</text>
+      <view class="r7-empty-copy">先建立空间名称，关系和方位可以稍后补充。</view>
+      <button class="secondary" bindtap="openSpaces">建立第一个空间</button>
+    </view>
+  </scroll-view>
+
+  <view class="r7-bottom-safe">
+    <button class="primary" disabled="{{!selectedOverviewSpace}}" bindtap="continuePatrol">{{selectedOverviewSpace ? '从' + selectedOverviewSpace.name + '继续巡场' : '尚无可巡场空间'}}</button>
+    <button class="secondary" bindtap="openSpaces">空间清单</button>
+  </view>
+</view>
+<view wx:elif="{{view === 'patrol' && selectedSpace}}" class="patrol-page">
+  <view class="patrol-location-bar">
+    <view class="patrol-location-copy">
+      <view>{{selectedSpace.name}} · {{selectedWorkStepLabel}}</view>
+      <text>施工阶段 {{project.stage}} · 横向切空间 · 纵向切工作环节</text>
+    </view>
+    <view class="patrol-axis-readout"><view class="active">{{selectedSpaceIndex + 1}}/{{spaces.length}} 空间</view><view>{{selectedWorkStepIndex + 1}}/{{workStepTrack.length}} 环节</view></view>
+  </view>
+  <view class="patrol-view-bar">
+    <view class="view-bar-copy"><text>施工阶段</text><view>{{project.stage}} · {{selectedSpace.stageStatusLabel}}</view></view>
+    <view wx:if="{{selectedWorkStepId === 'site'}}" class="patrol-view-switch">
+      <view class="{{patrolMode === 'evidence' ? 'active' : ''}} {{!currentEvidence ? 'disabled' : ''}}" data-mode="evidence" bindtap="setPatrolMode">现场证据 {{patrolEvidences.length}}</view>
+      <view class="{{patrolMode === 'illustration' ? 'active' : ''}}" data-mode="illustration" bindtap="setPatrolMode">空间示意</view>
+    </view>
+    <view wx:else class="work-step-context"><text>当前工作环节</text><view>{{selectedWorkStepLabel}}</view></view>
+  </view>
+  <view class="patrol-canvas {{transitionClass}} {{patrolMode === 'illustration' ? 'illustration-mode' : 'evidence-mode'}}" bindtouchstart="onTouchStart" catchtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchCancel">
+    <image wx:if="{{selectedWorkStepId === 'site' && patrolMode === 'evidence' && currentEvidence && currentEvidence.previewAvailable && currentEvidence.category === 'image'}}" class="patrol-image" mode="aspectFill" src="{{currentEvidence.previewPath}}" bindtap="openCurrentEvidence"></image>
+    <view wx:elif="{{selectedWorkStepId === 'site' && patrolMode === 'evidence' && currentEvidence}}" class="evidence-unavailable" bindtap="openCurrentEvidence"><view class="empty-mark">!</view><view class="empty-title">{{currentEvidence.statusLabel}}</view><view class="empty-copy">{{currentEvidence.fileName}}</view></view>
+    <view wx:else class="patrol-illustration">
+      <image class="space-illustration-image" mode="aspectFill" src="{{selectedSpace.illustrationPath}}"></image>
+      <view class="illustration-disclosure"><text>空间示意</text><view>非真实户型 · 不作为现场证据</view></view>
+      <view wx:if="{{(selectedWorkStepId === 'resolve' || selectedWorkStepId === 'review') && selectedSpace.issueCount}}" class="illustration-marker issue-marker" bindtap="openIssues"><text>{{selectedSpace.issueCount}}</text><view>待核查</view></view>
+      <view wx:if="{{(selectedWorkStepId === 'site' || selectedWorkStepId === 'record') && selectedSpace.evidenceCount}}" class="illustration-marker evidence-marker" bindtap="openEvidenceIndex"><text>{{selectedSpace.evidenceCount}}</text><view>份资料</view></view>
+    </view>
+    <view class="canvas-coordinate">{{project.stage}} · {{selectedSpace.name}} · {{selectedWorkStepLabel}}</view>
+    <view class="work-rail"><view class="work-stop {{item.selected ? 'selected' : ''}}" wx:for="{{workStepTrack}}" wx:key="id" data-index="{{index}}" bindtap="selectPatrolWorkStep" aria-label="切换到{{item.label}}环节"><text>{{item.shortLabel}}</text></view></view>
+    <view wx:if="{{selectedWorkStepId === 'site' && patrolMode === 'evidence' && currentEvidence && selectedSpace.issueCount}}" class="evidence-pin" bindtap="openCurrentEvidence">{{selectedSpace.issueCount}}</view>
+    <view class="patrol-work-panel">
+      <view class="work-panel-meta">{{project.stage}}阶段 · {{workPanel.eyebrow}}</view>
+      <view class="work-panel-title">{{workPanel.title}}</view>
+      <view class="work-panel-copy">{{workPanel.copy}}</view>
+      <view class="work-panel-actions">
+        <button class="work-manual" bindtap="openPatrolWorkAction">{{workPanel.primaryLabel}}</button>
+        <button class="work-ai" disabled="{{overview.readonly}}" bindtap="openPatrolWorkAi">{{workPanel.aiLabel}}</button>
+      </view>
+    </view>
+  </view>
+  <view class="patrol-controls">
+    <scroll-view wx:if="{{selectedWorkStepId === 'site' && patrolEvidences.length > 1}}" class="evidence-filmstrip" scroll-x enhanced show-scrollbar="{{false}}"><view class="evidence-chip {{index === selectedEvidenceIndex ? 'active' : ''}}" wx:for="{{patrolEvidences}}" wx:key="id" data-index="{{index}}" bindtap="selectEvidence">{{index + 1}} · {{item.fileName}}</view></scroll-view>
+    <scroll-view class="space-filmstrip" scroll-x enhanced show-scrollbar="{{false}}"><view class="space-track"><view class="space-track-item {{index === selectedSpaceIndex ? 'active' : ''}}" wx:for="{{spaces}}" wx:key="id" data-index="{{index}}" bindtap="selectPatrolSpace"><view>{{item.name}}</view><text>{{item.issueCount ? '待核查' : (item.evidenceCount ? '有资料' : '尚无资料')}}</text></view></view></scroll-view>
+    <view class="patrol-footer single"><button class="secondary" bindtap="showOverview">返回项目概览</button></view>
+    <view class="gesture-help">画布左右切空间、上下切工作环节 · 施工阶段不随手势改变 · 边界不循环</view>
+  </view>
+</view>
+<ai-assistant id="ai-assistant-dock" wx:if="{{project}}" project-id="{{project.id}}" project-name="{{currentProjectName}}" context-type="{{view === 'patrol' ? 'patrol' : 'overview'}}" context-label="{{view === 'patrol' ? project.stage + ' · ' + selectedSpace.name + ' · ' + selectedWorkStepLabel : '项目概览'}}" patrol-step-id="{{view === 'patrol' ? selectedWorkStepId : ''}}" stage-id="{{view === 'patrol' ? project.stage : ''}}" space-name="{{view === 'patrol' && selectedSpace ? selectedSpace.name : ''}}" record-id="{{assistantTargets.recordId}}" material-id="{{assistantTargets.materialId}}" receipt-id="{{assistantTargets.receiptId}}" issue-id="{{assistantTargets.issueId}}" issue-status="{{assistantTargets.issueStatus}}" bindnavigate="onAssistantNavigate"></ai-assistant>

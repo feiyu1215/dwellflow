@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "evaluatedAt": "2026-09-27",
+  "model": "deepseek-flash",
+  "pricingSnapshot": "pricing.deepseek-flash.2026-09-26.offpeak.json",
+  "interpretation": "仅表示当前公开/合成小样本达到内部基础门槛；参考标签不是专家真值，不代表装修工程检测准确率。",
+  "recordReview": {
+    "dataset": "record-review.synthetic-text.v1.json",
+    "promptVersion": "record-review-2026-09-27.2",
+    "contractVersion": "record-review-contract-1",
+    "report": "reports/m6b-record-final-2026-09-27.json",
+    "casesPassed": 6,
+    "caseCount": 6,
+    "assertionsPassed": 33,
+    "assertionCount": 33,
+    "contractPassRate": 1,
+    "totalTokens": 7275,
+    "averageDurationMs": 2603,
+    "estimatedCostCny": 0.01235732
+  },
+  "imageObservation": {
+    "dataset": "image-observation.mixed-vision.v1.json",
+    "promptVersion": "image-observation-2026-09-27.3",
+    "contractVersion": "image-observation-contract-1",
+    "report": "reports/m6b-image-final-v2-2026-09-27.json",
+    "casesPassed": 6,
+    "caseCount": 6,
+    "assertionsPassed": 51,
+    "assertionCount": 51,
+    "contractPassRate": 1,
+    "totalTokens": 10791,
+    "averageDurationMs": 5427,
+    "estimatedCostCny": 0.0196878
+  },
+  "finalReportsEstimatedCostCny": 0.03204512,
+  "knownIterationSpendCny": 0.06709054,
+  "unreportedCalls": 1,
+  "iterationNotes": [
+    "AI01 .1 首次真实输出把 suggestions 写成字符串数组，严格契约拒绝；.2 明确公共信封元素结构后通过。",
+    "AI03 .2 一次输出省略空 knowledgeIds，严格契约拒绝；.3 明确每条都必须含该数组后通过。",
+    "近黑图的模型描述使用“欠曝/亮度极低”而参考标签只列“暗”；扩充同义词后通过，属于参考标签覆盖修正。",
+    "一次单例在模型返回后因沙箱拒绝写报告而无可审计用量；未计入 knownIterationSpendCny。"
+  ],
+  "coverage": {
+    "recordReview": ["多房间", "事实与意见", "相对时间", "未转写语音", "冲突说法", "文字指令干扰"],
+    "imageObservation": ["公开墙面裂纹", "近黑图", "规则砖缝", "遮挡", "公开铺装裂纹", "图片指令干扰"]
+  },
+  "limitations": [
+    "图片仅含两张 CC BY 4.0 官方展示样例和四张本项目合成边界图，规模很小。",
+    "没有中国家庭真实装修现场的授权样本，也没有持证监理或工程专家复核标签。",
+    "公开裂纹标签只支持可见现象检查，不能支持成因、责任、合格性或结构安全判断。",
+    "模型供应商、模型版本和预训练数据暴露情况不可控，扩大样本后表现可能下降。"
+  ]
+}

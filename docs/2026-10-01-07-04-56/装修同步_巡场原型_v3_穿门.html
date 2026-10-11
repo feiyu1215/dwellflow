@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>装修同步 · 巡场原型 v3 · 镜头穿门</title>
+<style>
+:root{
+  --bg:#FBFAF7; --paper:#F3F1EA; --ink:#1C1B19; --sub:#6F6B63; --faint:#9C978E;
+  --line:#E7E4DE; --accent:#0E7C66; --accent-soft:#E7F1ED; --learned:#14B8A6;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{background:#E9E7E2;display:flex;align-items:center;justify-content:center;min-height:100vh;
+  font-family:"PingFang SC","Noto Sans SC",sans-serif;color:var(--ink)}
+.phone{position:relative;width:390px;height:760px;background:var(--bg);border-radius:40px;
+  box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden;border:1px solid rgba(0,0,0,.08)}
+
+/* ---------- 连续空间长廊 ---------- */
+#hall{position:absolute;inset:0;overflow:hidden;touch-action:pan-y;cursor:grab;background:var(--bg)}
+#hall.grabbing{cursor:grabbing}
+#strip{position:absolute;top:0;bottom:0;left:0;display:flex;align-items:stretch;will-change:transform}
+.slot{position:relative;flex:none;width:390px;height:100%;overflow:hidden;background:var(--paper)}
+.slot img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}
+.slot .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.slot .ph .big{font-size:44px;font-weight:800;color:#D8D3C8;letter-spacing:6px}
+.slot .ph .tag{font-size:11px;color:var(--faint);background:#fff;border:1px solid var(--line);
+  border-radius:999px;padding:5px 12px}
+.slot .ph .pbar{width:120px;height:5px;border-radius:999px;background:#E6E2D8;overflow:hidden}
+.slot .ph .pbar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+
+/* 门洞：镜头从这里穿过去 */
+.door{position:relative;flex:none;width:110px;height:100%;background:linear-gradient(90deg,#EFECE5,#E6E1D5 55%,#EFECE5)}
+.door::before{content:"";position:absolute;left:50%;top:6%;transform:translateX(-50%);
+  width:64px;height:88%;border-radius:32px 32px 0 0;
+  background:linear-gradient(90deg,#D9D3C4,#F2EFE7 48%,#D9D3C4);
+  border-left:3px solid #C9C2B0;border-right:3px solid #C9C2B0;border-top:3px solid #C9C2B0;
+  box-shadow:inset 0 0 24px rgba(0,0,0,.08)}
+.door::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;
+  background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.10))}
+
+/* ---------- 顶部信息 ---------- */
+.top{position:absolute;top:0;left:0;right:0;z-index:30;padding:22px 20px 12px;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(251,250,247,.96) 55%,rgba(251,250,247,0))}
+.top .t1{font-size:20px;font-weight:800}
+.top .t2{font-size:11.5px;color:var(--sub);margin-top:4px}
+.top .t2 b{color:var(--accent)}
+
+/* ---------- 底部索引 ---------- */
+.bottom{position:absolute;left:0;right:0;bottom:0;z-index:30;padding:14px 14px 18px;
+  background:linear-gradient(to top,rgba(251,250,247,.97) 70%,rgba(251,250,247,0));
+  display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font-size:11.5px;font-weight:700;color:var(--sub);background:rgba(255,255,255,.94);
+  border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip.cur{color:#fff;background:var(--accent);border-color:var(--accent)}
+.chip .p{font-weight:400;opacity:.75;margin-left:4px}
+.foot{display:flex;align-items:center;justify-content:space-between}
+.foot .tip{font-size:10.5px;color:var(--faint)}
+.flowbtn{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);
+  border:1px solid #D5E5DF;border-radius:999px;padding:6px 12px;cursor:pointer}
+
+/* ---------- 流程抽屉（6 模块） ---------- */
+.sheet{position:absolute;left:10px;right:10px;bottom:10px;z-index:50;background:var(--surface);
+  border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 14px 36px rgba(0,0,0,.15);
+  transform:translateY(120%);transition:transform .32s cubic-bezier(.22,.72,.2,1)}
+.sheet.open{transform:translateY(0)}
+.sheet h3{font-size:13px;font-weight:800}
+.sheet .mods{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px}
+.sheet .m{font-size:11.5px;border:1px solid var(--line);border-radius:10px;padding:7px 10px;color:var(--ink)}
+.sheet .m b{display:block;font-size:11.5px}
+.sheet .m span{font-size:10px;color:var(--faint)}
+.sheet .m.hot{border-color:var(--accent);background:var(--accent-soft)}
+.sheet .x{position:absolute;top:10px;right:12px;border:none;background:none;font-size:15px;color:var(--faint);cursor:pointer}
+
+/* ---------- AI ---------- */
+.ai{position:absolute;right:16px;bottom:96px;z-index:40;width:44px;height:44px;border-radius:50%;
+  background:var(--accent);border:none;cursor:pointer;box-shadow:0 6px 18px rgba(14,124,102,.35)}
+.ai::before,.ai::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);
+  animation:rip 2.6s ease-out infinite}
+.ai::after{animation-delay:1.3s}
+@keyframes rip{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.9);opacity:0}}
+.ai svg{position:absolute;inset:0;margin:auto}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div id="hall"><div id="strip"></div></div>
+
+  <header class="top">
+    <div class="t1" id="t-name">客厅</div>
+    <div class="t2" id="t-meta"></div>
+  </header>
+
+  <div class="bottom">
+    <div class="chips" id="chips"></div>
+    <div class="foot">
+      <span class="tip">左右滑动 = 走到隔壁 · 镜头穿门不切页</span>
+      <button class="flowbtn" id="btn-flow">流程 · 6 模块</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="sheet">
+    <button class="x" id="btn-sheetx">✕</button>
+    <h3>流程维度 · 6 模块（与空间维度并行）</h3>
+    <div class="mods">
+      <div class="m hot"><b>材料资源</b><span>计划 → 采购 → 到货 → 使用 → 缺口</span></div>
+      <div class="m"><b>现场记录</b><span>谁在哪个空间记了什么</span></div>
+      <div class="m"><b>约定决策</b><span>方案版本与结论</span></div>
+      <div class="m"><b>问题整改</b><span>发现 → 处理 → 复查</span></div>
+      <div class="m"><b>费用预算</b><span>报价 · 变更 · 付款</span></div>
+      <div class="m"><b>监控证据</b><span>照片 · 单据 · 时间</span></div>
+    </div>
+  </div>
+
+  <button class="ai" id="btn-ai" aria-label="AI 助手">
+    <svg width="20" height="20" viewBox="0 0 20 20"><path d="M10 2 L11.8 8.2 L18 10 L11.8 11.8 L10 18 L8.2 11.8 L2 10 L8.2 8.2 Z" fill="#fff"/></svg>
+  </button>
+</div>
+
+<script>
+/* ====== 数据：房间清单直接来自源码 ROOMS（全屋/其他 不作巡场项） ====== */
+var IMG_LIVING='assets_preview/Same_drawing_style__line_quali_2026-10-02T10-15-10.png';
+var IMG_BATH='assets_preview/Same_drawing_style__line_quali_2026-10-02T10-17-02.png';
+
+var ROOMS=[
+  {name:'客厅',  img:IMG_LIVING, prog:72, stage:'泥瓦 · 进行中'},
+  {name:'厨房',  img:null,       prog:45, stage:'防水 · 进行中'},
+  {name:'卫生间', img:IMG_BATH,  prog:20, stage:'防水 · 未开工'},
+  {name:'主卧',  img:null,       prog:55, stage:'木工 · 进行中'},
+  {name:'次卧',  img:null,       prog:10, stage:'未开工'},
+  {name:'阳台',  img:null,       prog:0,  stage:'未开工'}
+];
+
+var ROOM_W=390, DOOR_W=110, STEP=ROOM_W+DOOR_W;
+
+/* ====== 长廊 ====== */
+var strip=document.getElementById('strip');
+var h='';
+ROOMS.forEach(function(r,i){
+  if(i>0) h+='<div class="door"></div>';
+  h+='<div class="slot" data-i="'+i+'">';
+  if(r.img){
+    h+='<img src="'+r.img+'" alt="" style="filter:brightness('+(0.94+r.prog*0.0009).toFixed(3)+') saturate('+(0.82+r.prog*0.004).toFixed(3)+')">';
+  }else{
+    h+='<div class="ph"><div class="big">'+r.name+'</div>'
+      +'<div class="tag">素材位 · 正式管线按同一笔触生产</div>'
+      +'<div class="pbar"><i style="width:'+r.prog+'%"></i></div></div>';
+  }
+  h+='</div>';
+});
+strip.innerHTML=h;
+
+/* ====== 相机：x = 第 i 间房中心；滑动 = 走廊上连续移动，穿门不切页 ====== */
+var hall=document.getElementById('hall');
+var cam=0, target=0, drag=null;
+
+function camOf(i){return i*STEP;}
+function setCam(x,anim){
+  var max=(ROOMS.length-1)*STEP;
+  x=Math.max(0,Math.min(max,x));
+  strip.style.transition=anim?'transform .85s cubic-bezier(.3,.75,.25,1)':'none';
+  strip.style.transform='translateX('+(-x)+'px)';
+  return x;
+}
+function enter(i,anim){
+  i=Math.max(0,Math.min(ROOMS.length-1,i));
+  target=i;
+  cam=camOf(i);
+  setCam(cam,anim);
+  paintTop();paintChips();
+}
+function paintTop(){
+  var r=ROOMS[target];
+  document.getElementById('t-name').textContent=r.name;
+  document.getElementById('t-meta').innerHTML='完成度 <b>'+r.prog+'%</b> · '+r.stage
+    +' —— 上色程度=该空间的记录覆盖度（K06：不代表验收/完工状态）';
+}
+function paintChips(){
+  var h='';
+  ROOMS.forEach(function(r,i){
+    h+='<span class="chip'+(i===target?' cur':'')+'" data-i="'+i+'">'+r.name+'<span class="p">'+r.prog+'%</span></span>';
+  });
+  var box=document.getElementById('chips');
+  box.innerHTML=h;
+  Array.prototype.forEach.call(box.children,function(el){
+    el.addEventListener('click',function(){enter(+el.getAttribute('data-i'),true);});
+  });
+}
+
+/* 手势：拖 = 镜头跟手；松手 = 按动量吸附到最近的房间 */
+hall.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.chip')||e.target.closest('.flowbtn')||e.target.closest('.sheet')||e.target.closest('.ai'))return;
+  drag={sx:e.clientX,cam0:cam,camT0:performance.now()};
+  hall.classList.add('grabbing');
+  hall.setPointerCapture(e.pointerId);
+});
+hall.addEventListener('pointermove',function(e){
+  if(!drag)return;
+  var dx=e.clientX-drag.sx;
+  var max=(ROOMS.length-1)*STEP;
+  cam=Math.max(-60,Math.min(max+60,drag.cam0-dx));
+  setCam(cam,false);
+});
+hall.addEventListener('pointerup',function(e){
+  if(!drag)return;
+  var dx=e.clientX-drag.sx;
+  var dt=Math.max(1,performance.now()-drag.camT0);
+  var v=dx/dt;                       /* px/ms，向右为正 */
+  var i=Math.round(cam/STEP);
+  if(Math.abs(v)>0.45) i=cam/STEP - Math.sign(v)*0.9;
+  enter(Math.round(i),true);
+  drag=null;hall.classList.remove('grabbing');
+});
+
+/* ====== 流程抽屉 ====== */
+var sheet=document.getElementById('sheet');
+document.getElementById('btn-flow').addEventListener('click',function(){sheet.classList.toggle('open');});
+document.getElementById('btn-sheetx').addEventListener('click',function(){sheet.classList.remove('open');});
+document.getElementById('btn-ai').addEventListener('click',function(){sheet.classList.remove('open');});
+
+enter(0,false);
+</script>
+</body>
+</html>

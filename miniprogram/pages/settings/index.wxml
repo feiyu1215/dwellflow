@@ -1,0 +1,87 @@
+<view class="page settings-page">
+  <view class="settings-nav">
+    <view class="settings-back" bindtap="goBack">‹ 返回</view>
+    <view class="settings-nav-title">个人设置</view>
+    <view class="settings-nav-spacer"></view>
+  </view>
+
+  <view class="profile-stage">
+    <view class="profile-avatar">{{avatarLabel}}</view>
+    <view class="profile-copy">
+      <view class="profile-kicker">本地体验身份</view>
+      <view class="profile-name">{{displayName}}</view>
+      <view class="profile-meta">{{projectRoleLabel}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{message}}" class="inline-notice notice-success settings-notice">{{message}}</view>
+  <view wx:if="{{error}}" class="inline-notice notice-danger settings-notice">{{error}}</view>
+
+  <view class="settings-section-label">个人资料</view>
+  <view class="settings-group profile-editor">
+    <view class="settings-field-label">显示名称</view>
+    <view class="profile-input-row">
+      <input class="profile-input" value="{{displayName}}" bindinput="onDisplayName" maxlength="30" placeholder="例如：林先生" />
+      <view class="profile-save" bindtap="saveProfile">保存</view>
+    </view>
+    <view class="settings-footnote">名称只保存在当前设备；正式账号与跨设备身份尚未接入。</view>
+  </view>
+
+  <view class="settings-section-label">当前项目</view>
+  <view class="settings-group">
+    <view class="settings-row" bindtap="openProject">
+      <view class="row-symbol project-symbol"><view></view></view>
+      <view class="row-copy"><view>{{projectName}}</view><text>{{projectStage ? projectStage + '阶段 · ' : ''}}{{projectStatusLabel}}</text></view>
+      <view class="row-value">管理</view><view class="row-chevron">›</view>
+    </view>
+    <view class="settings-row" bindtap="openCollaboration">
+      <view class="row-symbol member-symbol"><view></view><view></view></view>
+      <view class="row-copy"><view>成员与权限</view><text>按项目角色控制可见范围与最终决定</text></view>
+      <view class="row-chevron">›</view>
+    </view>
+  </view>
+
+  <view class="settings-section-label">AI 与业务服务</view>
+  <view class="service-stage">
+    <view class="service-heading">
+      <view class="service-orbit"><view class="orbit-core"></view><view class="orbit-ring"></view></view>
+      <view class="service-copy"><view>AI 协作服务</view><text>{{connectionLabel}}</text></view>
+      <view class="service-state {{tokenConfigured ? 'ready' : ''}}"><view></view>{{tokenConfigured ? '已保存' : '未配置'}}</view>
+    </view>
+    <view class="service-boundary">AI 只读取每次任务中明确选择的项目资料；结果先进入人工复核，不会批准、付款或关闭问题。</view>
+    <view class="service-actions">
+      <view class="service-primary" bindtap="openAi">打开 AI 工作台</view>
+      <view class="service-secondary" bindtap="toggleConnectionDetails">{{showConnectionDetails ? '收起开发连接' : (tokenConfigured ? '查看开发连接' : '配置开发连接')}}</view>
+    </view>
+    <view wx:if="{{showConnectionDetails}}" class="connection-panel">
+      <view class="connection-warning">这里填写小程序访问自有业务服务的地址与访问凭证。DeepSeek API Key 只保存在服务端 .env。</view>
+      <view class="settings-field-label">服务地址</view>
+      <input class="input connection-input" value="{{baseUrl}}" bindinput="onBaseUrl" placeholder="http://127.0.0.1:8787" />
+      <view class="settings-field-label">服务访问凭证</view>
+      <input class="input connection-input" password value="{{serviceToken}}" bindinput="onToken" placeholder="AI_SERVICE_TOKEN" />
+      <button class="primary connection-save" bindtap="saveConnection">保存连接信息</button>
+      <view class="settings-footnote">保存只代表连接信息已写入本机，不代表服务已经连通。</view>
+    </view>
+  </view>
+
+  <view class="settings-section-label">通知、数据与隐私</view>
+  <view class="settings-group">
+    <view class="settings-row static-row">
+      <view class="row-symbol attention-symbol"><view></view></view>
+      <view class="row-copy"><view>本人待处理</view><text>由项目事实投影，不冒充系统通知</text></view>
+      <view class="row-status">项目内</view>
+    </view>
+    <view class="settings-row static-row">
+      <view class="row-symbol privacy-symbol"><view></view></view>
+      <view class="row-copy"><view>AI 资料范围</view><text>每次任务单独确认，不默认读取全部项目</text></view>
+      <view class="row-status">受限</view>
+    </view>
+    <view class="settings-row" bindtap="openBackup">
+      <view class="row-symbol backup-symbol"><view></view></view>
+      <view class="row-copy"><view>备份与导出</view><text>恢复前先预检，不直接覆盖当前数据</text></view>
+      <view class="row-chevron">›</view>
+    </view>
+  </view>
+
+  <view class="settings-footer">装修同步 · 当前为本地开发体验</view>
+</view>

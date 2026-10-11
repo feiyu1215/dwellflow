@@ -1,0 +1,101 @@
+<view class="page">
+  <view class="utility-header">
+    <view class="eyebrow">可移植资料</view>
+    <view class="title">备份与恢复</view>
+    <view class="subtitle">{{hasProject ? projectName + ' · ' + projectStatus : '可以导入已有资料包；创建导出前需先选择项目。'}}</view>
+  </view>
+
+  <view class="notice">当前使用单文件本地方案，不调用云服务或模型。原件总量上限为 20 MiB；离线文件一旦外发无法远程撤回。</view>
+
+  <block wx:if="{{hasProject}}">
+    <view class="mode-grid">
+      <view class="mode-card interactive-card {{mode === 'full' ? 'active' : ''}}" data-mode="full" bindtap="chooseMode">
+        <view class="mode-title">完整项目备份</view>
+        <view class="meta">包含业务历史和原件，用于恢复新副本。</view>
+      </view>
+      <view class="mode-card interactive-card {{mode === 'limited' ? 'active' : ''}}" data-mode="limited" bindtap="chooseMode">
+        <view class="mode-title">限定阅读资料</view>
+        <view class="meta">只外发明确选择的记录和问题，不能恢复项目。</view>
+      </view>
+    </view>
+
+    <view wx:if="{{mode === 'limited'}}" class="card">
+      <view class="section-title">选择外发范围</view>
+      <checkbox-group bindchange="onResources">
+        <view class="resource-heading">记录</view>
+        <label wx:for="{{recordOptions}}" wx:key="id" class="resource-option"><checkbox value="{{item.value}}" color="#176B5B" />{{item.title}}</label>
+        <view class="resource-heading">问题</view>
+        <label wx:for="{{issueOptions}}" wx:key="id" class="resource-option"><checkbox value="{{item.value}}" color="#176B5B" />{{item.title}}</label>
+      </checkbox-group>
+    </view>
+
+    <button class="secondary main-action" disabled="{{busy}}" bindtap="previewExport">检查范围和原件</button>
+
+    <view wx:if="{{previewReady}}" class="card preview-card">
+      <view class="section-title">生成前预览</view>
+      <view class="meta">{{previewMeta}}</view>
+      <view wx:if="{{previewBlocked}}" class="error-note">当前资料超过本地安全上限，请减少附件后重新检查。</view>
+      <view class="content-preview" wx:for="{{previewSections}}" wx:key="key" wx:for-item="section">
+        <view class="row preview-section-head">
+          <view class="preview-section-title">{{section.title}}</view>
+          <view class="meta">{{section.shownCount}} / {{section.totalCount}}</view>
+        </view>
+        <view class="content-row" wx:for="{{section.items}}" wx:key="key" wx:for-item="entry">
+          <view class="content-title">{{entry.title}}</view>
+          <view class="content-detail">{{entry.detail}}</view>
+          <view class="meta">{{entry.meta}}</view>
+        </view>
+        <view wx:if="{{section.omittedCount}}" class="meta omitted-note">预览省略 {{section.omittedCount}} 条；生成文件仍包含本次范围内的全部内容。</view>
+      </view>
+      <view wx:if="{{!previewSections.length}}" class="meta empty-content">本次范围没有可展示的业务正文。</view>
+      <view class="preview-subtitle">原件检查</view>
+      <view class="file-row" wx:for="{{previewItems}}" wx:key="key">
+        <view class="file-name">{{item.name}}<view class="meta">{{item.sizeLabel}}</view></view>
+        <view class="pill {{item.statusClass}}">{{item.statusLabel}}</view>
+      </view>
+      <view class="meta preview-help">缺失文件会进入缺失清单；完整备份有缺件时不能用于恢复。</view>
+      <button class="primary" disabled="{{previewBlocked || busy}}" bindtap="generateExport">确认生成固定资料</button>
+    </view>
+  </block>
+
+  <view class="row history-title"><view class="section-title">本机生成记录</view><view class="meta">共 {{taskCount}} 项</view></view>
+  <view wx:if="{{tasks.length}}">
+    <view class="card" wx:for="{{tasks}}" wx:key="id">
+      <view class="row"><view class="mode-title">{{item.title}}</view><view class="pill {{item.statusClass}}">{{item.statusLabel}}</view></view>
+      <view class="meta task-meta">{{item.meta}}</view>
+      <view wx:if="{{item.errorNote}}" class="error-note">{{item.errorNote}}</view>
+      <view wx:if="{{item.canShareHtml || item.canShareJson || item.canDelete}}" class="task-actions">
+        <button wx:if="{{item.canShareHtml}}" class="secondary tiny" data-id="{{item.id}}" data-kind="html" bindtap="shareTask">发送阅读页</button>
+        <button wx:if="{{item.canShareJson}}" class="secondary tiny" data-id="{{item.id}}" data-kind="json" bindtap="shareTask">发送数据包</button>
+        <button wx:if="{{item.canDelete}}" class="danger tiny {{item.canShareHtml || item.canShareJson ? 'wide' : ''}}" data-id="{{item.id}}" bindtap="removeTask">删除本机文件与记录</button>
+      </view>
+    </view>
+    <button wx:if="{{hasMoreTasks}}" class="secondary more-button" bindtap="showMoreTasks">再显示 20 项</button>
+  </view>
+  <view wx:else class="empty card">还没有生成过本机资料包。生成只代表文件已创建，不代表已经发送或保存到其他设备。</view>
+
+  <view class="section-title history-title">从文件恢复</view>
+  <view class="card">
+    <view class="meta">选择本产品生成的 .renosync.json 文件。导入只解析数据，不执行阅读页中的内容。</view>
+    <button class="secondary import-button" bindtap="chooseImport">选择聊天文件</button>
+    <view wx:if="{{importReady}}" class="import-summary">
+      <view>{{importMeta}}</view>
+      <view wx:if="{{!importRestorable}}" class="error-note">该文件只适合阅读或资料不完整，不能恢复项目。</view>
+      <view wx:if="{{importRestorable && importAlreadyRestored}}" class="error-note">此资料包已经恢复过；继续将明确创建另一个副本。</view>
+      <button wx:if="{{importRestorable}}" class="primary" disabled="{{busy}}" bindtap="restoreSelected">{{importAlreadyRestored ? '再恢复一份只读副本' : '恢复为只读副本'}}</button>
+    </view>
+  </view>
+
+  <view class="section-title history-title">兼容旧版 JSON</view>
+  <view class="card">
+    <view class="meta legacy-note">旧 v1/v2 只保存原设备路径，不能证明附件已迁移。恢复后仍创建只读副本，并明确保留附件缺口。</view>
+    <button class="secondary paste-button" bindtap="pasteLegacy">从剪贴板粘贴</button>
+    <textarea class="textarea legacy-input" value="{{legacyText}}" bindinput="onLegacyText" placeholder="粘贴 renovation-sync-backup-v1/v2 JSON" />
+    <button class="secondary" disabled="{{busy}}" bindtap="inspectLegacy">先检查结构和本机路径</button>
+    <view wx:if="{{legacyReady}}" class="import-summary">
+      <view>{{legacyMeta}}</view>
+      <view wx:if="{{legacyMissingCount}}" class="error-note">不可读路径不会自动匹配同名文件；恢复后会保留资料缺口。</view>
+      <button class="primary" disabled="{{busy}}" bindtap="restoreLegacy">恢复旧版只读副本</button>
+    </view>
+  </view>
+</view>

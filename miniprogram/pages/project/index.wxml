@@ -1,0 +1,131 @@
+<view class="page">
+  <view class="utility-header">
+    <view class="eyebrow">装修场景</view>
+    <view class="title">选择一个空间继续</view>
+    <view class="subtitle">每个房子拥有独立的流程、参与者、资料和 AI 上下文。轻触场景后返回它的当前进展。</view>
+  </view>
+
+  <view class="section-head project-head">
+    <view><view class="section-title">进行中的场景</view><view class="section-kicker">{{activeProjects.length > 1 ? '选择要继续的装修点' : '当前只有一个装修点'}}</view></view>
+    <button class="secondary create-button" bindtap="openForm">＋ 新建</button>
+  </view>
+  <view wx:if="{{!activeProjects.length}}" class="empty project-empty">暂无进行中的项目，可新建项目或从归档中重新开启。</view>
+  <view wx:if="{{activeProjects.length}}" class="scene-field {{activeProjects.length === 1 ? 'single' : ''}}">
+    <view class="{{item.bubbleClass}} {{item.selected ? 'selected' : ''}}" wx:for="{{activeProjects}}" wx:key="id" data-id="{{item.id}}" bindtap="selectScene">
+      <view wx:if="{{item.selected}}" class="scene-current">当前</view>
+      <view class="scene-name">{{item.name}}</view>
+      <view class="scene-stage">{{item.stage}}</view>
+      <view class="scene-attention">{{item.attentionLabel}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{currentActiveProject}}" class="section-head"><view><view class="section-title">当前场景设置</view><view class="section-kicker">负责人 {{currentActiveProject.ownerName}} · 更新于 {{currentActiveProject.updatedText}}</view></view></view>
+  <view wx:if="{{currentActiveProject}}" class="card current-scene-card">
+    <view class="row"><view><view class="item-title">{{currentActiveProject.name}}</view><view class="meta">{{currentActiveProject.stage}} · {{currentActiveProject.attentionLabel}}</view></view><view class="pill pill-green">当前</view></view>
+    <view class="project-links">
+      <view class="action-link" data-id="{{currentActiveProject.id}}" bindtap="openEdit">编辑</view>
+      <view class="action-link" data-id="{{currentActiveProject.id}}" data-action="archive" bindtap="openLifecycle">归档</view>
+      <view class="action-link danger-link" data-id="{{currentActiveProject.id}}" data-action="trash" bindtap="openLifecycle">回收站</view>
+    </view>
+  </view>
+  <block wx:if="{{archivedProjects.length}}">
+    <view class="section-title group-title">已归档场景</view>
+    <view class="hint">选择后可查看和导出历史资料；需要修改时先重新开启。</view>
+    <view class="card project-card archived interactive-card {{item.selected ? 'selected' : ''}}" wx:for="{{archivedProjects}}" wx:key="id" data-id="{{item.id}}" bindtap="select">
+      <view class="row">
+        <view class="project-main">
+          <view class="item-title">{{item.name}}</view>
+          <view class="meta">{{item.stage}} · 负责人 {{item.ownerName}}</view>
+          <view wx:if="{{item.lifecycleText}}" class="lifecycle-text">{{item.lifecycleText}}</view>
+        </view>
+        <view class="project-status">
+          <view class="pill">只读</view>
+          <view wx:if="{{item.selected}}" class="pill pill-green">当前</view>
+        </view>
+      </view>
+      <view class="project-links">
+        <view class="action-link" data-id="{{item.id}}" data-action="reopen" catchtap="openLifecycle">重新开启</view>
+        <view class="action-link danger-link" data-id="{{item.id}}" data-action="trash" catchtap="openLifecycle">移入回收站</view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{trashedProjects.length}}">
+    <view class="section-title group-title">回收站</view>
+    <view class="hint">旧成员、分享和监控授权已撤销。恢复后项目保持只读，旧授权不会复活。</view>
+    <view class="card project-card trashed" wx:for="{{trashedProjects}}" wx:key="id">
+      <view class="row">
+        <view class="project-main">
+          <view class="item-title">{{item.name}}</view>
+          <view class="meta">{{item.stage}} · 负责人 {{item.ownerName}}</view>
+          <view class="lifecycle-text">保留至 {{item.purgeText}}</view>
+        </view>
+        <view class="pill pill-amber">回收站</view>
+      </view>
+      <view class="project-links">
+        <view class="action-link" data-id="{{item.id}}" data-action="restore" catchtap="openLifecycle">恢复项目</view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{hasCurrentProject}}">
+    <view class="section-head tools-head"><view><view class="section-title">当前项目工具</view><view class="section-kicker">资料、参考与设备按用途分开</view></view></view>
+    <view class="card collaboration-entry featured-entry interactive-card" bindtap="openCollaboration">
+      <view>
+        <view class="entry-title">协作与资料交接</view>
+        <view class="meta">本机参与者、外部咨询、限定分享和可恢复备份。</view>
+      </view>
+      <view class="entry-arrow">›</view>
+    </view>
+    <view class="workspace-grid">
+      <view class="card collaboration-entry compact-entry interactive-card" bindtap="openKnowledge">
+        <view>
+          <view class="entry-tag">本地可用</view>
+          <view class="entry-title">检查参考</view>
+          <view class="meta">知识卡、检查步骤与来源。</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="card collaboration-entry compact-entry interactive-card" bindtap="openCamera">
+        <view>
+          <view class="entry-tag pending-tag">需要设备</view>
+          <view class="entry-title">监控设备</view>
+          <view class="meta">查看接入条件和授权状态。</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:if="{{showForm}}" class="sheet-mask" bindtap="closeForm">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeForm">关闭</view></view>
+      <view class="section-title">{{showForm === 'edit' ? '编辑装修项目' : '创建装修项目'}}</view>
+      <view class="label">项目名称</view>
+      <input class="input" value="{{name}}" bindinput="onName" placeholder="例如：父母家翻新" />
+      <view class="label">项目负责人</view>
+      <input class="input" value="{{ownerName}}" bindinput="onOwner" />
+      <view class="label">当前工序</view>
+      <picker mode="selector" range="{{stages}}" value="{{stageIndex}}" bindchange="onStage">
+        <view class="picker">{{stages[stageIndex]}}</view>
+      </picker>
+      <button class="primary" bindtap="submit">{{showForm === 'edit' ? '保存项目设置' : '创建并切换'}}</button>
+      <button class="text-button" bindtap="closeForm">取消</button>
+    </view>
+  </view>
+
+  <view wx:if="{{lifecycleAction}}" class="sheet-mask" bindtap="closeLifecycle">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeLifecycle">关闭</view></view>
+      <view class="section-title">{{lifecycleTitle}}</view>
+      <view class="meta lifecycle-description">项目：{{lifecycleProjectName}}</view>
+      <view wx:if="{{lifecycleAction === 'archive'}}" class="notice">归档后所有新增、编辑、确认和撤销操作都会暂停，仍可查看与备份。</view>
+      <view wx:if="{{lifecycleAction === 'trash'}}" class="notice danger-notice">移入回收站后立即撤销成员、分享与监控授权，30 天后自动清理。</view>
+      <view wx:if="{{lifecycleAction === 'restore'}}" class="notice">恢复后的项目保持只读；确认继续施工时，再执行“重新开启”。</view>
+      <view class="label">操作原因</view>
+      <textarea class="textarea" value="{{lifecycleReason}}" bindinput="onLifecycleReason" maxlength="120"></textarea>
+      <button class="{{lifecycleAction === 'trash' ? 'danger-button' : 'primary'}}" bindtap="submitLifecycle">{{lifecycleSubmitLabel}}</button>
+      <button class="text-button" bindtap="closeLifecycle">取消</button>
+    </view>
+  </view>
+</view>

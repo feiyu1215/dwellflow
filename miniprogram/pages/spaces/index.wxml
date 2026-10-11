@@ -1,0 +1,59 @@
+<view class="page">
+  <view wx:if="{{!projectId}}" class="card no-project"><view class="empty-title">还没有当前项目</view><view class="meta">先创建或选择一个装修项目。</view></view>
+  <block wx:else>
+    <view class="utility-header utility-header-compact"><view class="eyebrow">{{projectName}}</view><view class="title">空间与现场</view><view class="subtitle">先整理稳定空间、阶段状态与资料归属；空间顺序将用于后续巡场。</view></view>
+    <view wx:if="{{readonly}}" class="readonly-banner">项目当前只读，可查看历史空间，不能修改或整理归属。</view>
+    <view class="backup-notice">空间结构的跨设备导出将在后续阶段补齐；当前导出包不包含这一部分。</view>
+
+    <view class="section-head"><view><view class="section-title">有效空间</view><view class="section-kicker">顺序将作为横向巡场的默认顺序</view></view><button wx:if="{{!readonly}}" class="secondary compact-button" bindtap="openCreateSpace">＋ 添加</button></view>
+    <view wx:if="{{!activeSpaces.length}}" class="card empty"><view class="empty-title">还没有正式空间</view><view>添加房间，或从下方旧标签创建。</view></view>
+    <view class="space-list">
+      <view class="card space-card" wx:for="{{activeSpaces}}" wx:key="id">
+        <view class="row"><view class="space-main"><view class="space-name">{{item.name}}</view><view class="meta">{{item.kindLabel}} · {{projectStage}}：{{item.stageStatusLabel}}</view></view><view class="pill pill-green">第 {{index + 1}} 位</view></view>
+        <view class="space-facts"><text>{{item.recordCount}} 条记录</text><text>{{item.issueCount}} 个进行中问题</text><text>{{item.relationCount}} 个关系</text></view>
+        <view wx:if="{{!readonly}}" class="space-actions">
+          <view class="action-link" data-id="{{item.id}}" bindtap="openStageForm">阶段状态</view><view class="action-link" data-id="{{item.id}}" bindtap="openRelationForm">添加关系</view><view class="action-link" data-id="{{item.id}}" bindtap="openEditSpace">编辑</view>
+          <view class="action-link" data-id="{{item.id}}" data-direction="up" bindtap="moveSpace">上移</view><view class="action-link" data-id="{{item.id}}" data-direction="down" bindtap="moveSpace">下移</view>
+          <view class="action-link danger-link" data-id="{{item.id}}" data-version="{{item.version}}" data-active="false" bindtap="toggleSpace">停用</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-head"><view><view class="section-title">旧房间标签</view><view class="section-kicker">整理尚未绑定稳定空间的记录、问题和设备</view></view></view>
+    <view wx:if="{{!candidates.length}}" class="card compact-empty">没有待整理的旧标签。</view>
+    <view class="card mapping-card" wx:for="{{candidates}}" wx:key="sourceLabel">
+      <view class="row"><view><view class="space-name">{{item.sourceLabel}}</view><view class="meta">{{item.summary}}</view></view><view class="pill pill-amber">待归属</view></view>
+      <view wx:if="{{!readonly && item.mappedSpaceId}}" class="mapping-actions single-action"><button class="secondary mapping-button" data-label="{{item.sourceLabel}}" data-space-id="{{item.mappedSpaceId}}" bindtap="applyConfirmedMapping">沿用已确认归属：{{item.mappedSpaceName}}</button></view>
+      <view wx:elif="{{!readonly}}" class="mapping-actions"><button class="secondary mapping-button" data-label="{{item.sourceLabel}}" bindtap="createAndMap">创建同名空间</button><picker mode="selector" range="{{activeSpaceNames}}" value="0" data-label="{{item.sourceLabel}}" bindchange="mapToExisting"><view class="picker mapping-picker">关联已有空间</view></picker></view>
+    </view>
+
+    <view class="section-head"><view><view class="section-title">空间关系</view><view class="section-kicker">非比例示意，不代表图纸距离</view></view></view>
+    <view wx:if="{{!relations.length}}" class="card compact-empty">尚未登记空间关系，这不会阻止记录和归属。</view><view class="card relation-row" wx:for="{{relations}}" wx:key="*this">{{item}}</view>
+
+    <block wx:if="{{inactiveSpaces.length}}"><view class="section-head"><view><view class="section-title">已停用空间</view><view class="section-kicker">历史资料仍然保留</view></view></view>
+      <view class="card inactive-row" wx:for="{{inactiveSpaces}}" wx:key="id"><view class="row"><view><view class="space-name">{{item.name}}</view><view class="meta">只读历史空间</view></view><view wx:if="{{!readonly}}" class="action-link" data-id="{{item.id}}" data-version="{{item.version}}" data-active="true" bindtap="toggleSpace">恢复</view></view></view>
+    </block>
+    <view class="section-link" bindtap="openRecords">查看全部现场记录 ›</view>
+  </block>
+
+  <view wx:if="{{showSpaceForm}}" class="sheet-mask" bindtap="closeSpaceForm"><view class="sheet" catchtap="noop"><view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeSpaceForm">关闭</view></view>
+    <view class="section-title">{{editingSpaceId ? '编辑空间' : '添加空间'}}</view><view class="label">空间名称</view><input class="input" value="{{spaceName}}" maxlength="40" bindinput="onSpaceName" placeholder="例如：主卧、厨房" />
+    <view class="label">空间类型</view><picker mode="selector" range="{{kindLabels}}" value="{{kindIndex}}" bindchange="onKindChange"><view class="picker">{{kindLabels[kindIndex]}}</view></picker>
+    <view class="switch-row"><view><view class="switch-title">参与后续空间拓扑</view><view class="meta">“全屋”不会作为物理房间参与。</view></view><switch checked="{{participatesInTopology}}" disabled="{{kindLabels[kindIndex] === '全屋'}}" bindchange="onTopologyChange" color="#0071e3" /></view>
+    <button class="primary" bindtap="submitSpace">保存空间</button><button class="text-button" bindtap="closeSpaceForm">取消</button>
+  </view></view>
+
+  <view wx:if="{{showStageForm}}" class="sheet-mask" bindtap="closeStageForm"><view class="sheet" catchtap="noop"><view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeStageForm">关闭</view></view>
+    <view class="section-title">{{stageSpaceName}}的阶段状态</view><view class="label">施工阶段</view><picker mode="selector" range="{{stages}}" value="{{stageIndex}}" bindchange="onStageChange"><view class="picker">{{stages[stageIndex]}}</view></picker>
+    <view class="label">状态</view><picker mode="selector" range="{{stageStatusLabels}}" value="{{stageStatusIndex}}" bindchange="onStageStatusChange"><view class="picker">{{stageStatusLabels[stageStatusIndex]}}</view></picker>
+    <view class="inline-notice">“负责人已确认完成”只记录负责人决定，不等于专业工程验收。没有证据时请写明依据不足。</view><view class="label">状态说明</view><textarea class="textarea" value="{{stageNote}}" maxlength="1000" bindinput="onStageNote" placeholder="记录现场依据、待补资料或回退原因"></textarea>
+    <button class="primary" bindtap="submitStage">保存状态</button><button class="text-button" bindtap="closeStageForm">取消</button>
+  </view></view>
+
+  <view wx:if="{{showRelationForm}}" class="sheet-mask" bindtap="closeRelationForm"><view class="sheet" catchtap="noop"><view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeRelationForm">关闭</view></view>
+    <view class="section-title">添加空间关系</view><view class="meta relation-source">起点：{{relationFromName}}</view><view class="label">目标空间</view><picker mode="selector" range="{{relationTargetNames}}" value="{{relationTargetIndex}}" bindchange="onRelationTarget"><view class="picker">{{relationTargetNames[relationTargetIndex]}}</view></picker>
+    <view class="label">关系类型</view><picker mode="selector" range="{{relationKindLabels}}" value="{{relationKindIndex}}" bindchange="onRelationKind"><view class="picker">{{relationKindLabels[relationKindIndex]}}</view></picker>
+    <view class="label">方向提示</view><picker mode="selector" range="{{relationDirectionLabels}}" value="{{relationDirectionIndex}}" bindchange="onRelationDirection"><view class="picker">{{relationDirectionLabels[relationDirectionIndex]}}</view></picker>
+    <view class="inline-notice">这里只登记人工确认的拓扑提示，不推断比例、距离、面积或真实户型。</view><button class="primary" bindtap="submitRelation">保存关系</button><button class="text-button" bindtap="closeRelationForm">取消</button>
+  </view></view>
+</view>

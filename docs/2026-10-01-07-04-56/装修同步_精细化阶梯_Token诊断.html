@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>装修同步 · 精细化阶梯 / Token 诊断</title>
+<style>
+:root{
+  --doc:#EFEEE9; --panel:#FBFAF6; --ink:#1B1A18; --ink2:#57544C; --ink3:#8B877B;
+  --line:#DCD8CD; --line2:#C6C1B2; --accent:#A2471F; --accent-s:#F2E5DC;
+  --teal:#1F6B62;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--doc);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:0 26px 90px}
+
+header{padding:56px 0 26px;border-bottom:1px solid var(--line2)}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase}
+h1{font-size:33px;font-weight:600;letter-spacing:-.02em;margin:12px 0 8px;line-height:1.22}
+.lede{font-size:16px;color:var(--ink2);max-width:730px;margin:0}
+.verdict{margin:24px 0 0;padding:17px 21px;background:var(--panel);border-left:3px solid var(--accent);border-radius:0 10px 10px 0}
+.verdict .va{font-size:16.5px;font-weight:600;margin-bottom:5px;letter-spacing:-.01em}
+.verdict .va b{color:var(--accent)}
+.verdict p{margin:0;font-size:13.5px;color:var(--ink2)}
+
+section{margin-top:50px}
+.sh2{display:flex;align-items:baseline;gap:12px;padding-bottom:11px;border-bottom:1px solid var(--line2);margin-bottom:20px}
+.sh2 .num{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em}
+.sh2 h2{font-size:21px;font-weight:600;margin:0;letter-spacing:-.01em}
+.sh2 .note{margin-left:auto;font-size:12px;color:var(--ink3)}
+
+.stat{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.stat{grid-template-columns:1fr 1fr}}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:15px 17px}
+.st .sv{font-family:var(--mono);font-size:29px;line-height:1;letter-spacing:-.02em;color:var(--accent)}
+.st .sl{font-size:12.5px;color:var(--ink2);margin-top:7px;font-weight:600}
+.st .sd{font-size:11.5px;color:var(--ink3);margin-top:3px;line-height:1.5}
+.st .raw{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:8px;padding-top:7px;border-top:1px solid var(--line)}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+@media(max-width:860px){.grid3,.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 18px}
+.card h3{font-size:15px;font-weight:600;margin:0 0 7px;letter-spacing:-.005em}
+.card p{margin:0;font-size:13px;color:var(--ink2);line-height:1.62}
+.card .tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--accent);
+  border:1px solid var(--accent);border-radius:3px;padding:1px 5px;margin-bottom:8px}
+.card .tag.t2{color:var(--teal);border-color:var(--teal)}
+
+.mech{display:grid;grid-template-columns:26px 1fr;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)}
+.mech:last-child{border-bottom:0}
+.mech .mn{font-family:var(--mono);font-size:12px;color:var(--accent);padding-top:1px}
+.mech .mt{font-size:14.5px;font-weight:600;margin-bottom:4px}
+.mech .mb{font-size:13px;color:var(--ink2)}
+.mech .mb b{color:var(--ink);font-weight:600}
+
+/* ============ 演示台 ============ */
+.lab{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+@media(max-width:960px){.lab{grid-template-columns:1fr}}
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:17px 19px;position:sticky;top:16px}
+.rail .rh{font-family:var(--mono);font-size:10px;letter-spacing:.13em;color:var(--ink3);text-transform:uppercase;margin-bottom:11px}
+.presets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px}
+.ps{border:1px solid var(--line2);background:#fff;border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .25s}
+.ps .pv{font-size:13px;font-weight:600;line-height:1.2}
+.ps .pd{font-size:9.5px;color:var(--ink3);margin-top:2px}
+.ps:hover{border-color:var(--accent)}
+.ps.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ps.on .pd{color:rgba(255,255,255,.8)}
+.toggles{border-top:1px solid var(--line);padding-top:13px}
+.tg{display:flex;align-items:flex-start;gap:10px;padding:8px 0;cursor:pointer;transition:opacity .25s}
+.tg .bx{width:15px;height:15px;border:1px solid var(--line2);border-radius:4px;background:#fff;flex:none;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;transition:all .22s}
+.tg.on .bx{background:var(--accent);border-color:var(--accent)}
+.tg .tt{font-size:13px;font-weight:600;line-height:1.3}
+.tg .td{font-size:11px;color:var(--ink3);line-height:1.45;margin-top:1px}
+.tg:before{content:"";position:absolute}
+.tg .bx:after{content:"";width:4px;height:7px;border:2px solid #fff;border-top:0;border-left:0;
+  transform:rotate(42deg) translateY(-1px);opacity:0;transition:opacity .2s}
+.tg.on .bx:after{opacity:1}
+
+/* ---------- stage：被诊断的那一套 ---------- */
+.stagewrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.stage{
+  /* ===== 基准 = 你现在的 app.wxss（rpx / 2 = px） ===== */
+  --bg:#f5f5f7;
+  --cardbg:#fff;
+  --ink:#1d1d1f; --ink2:#3a3a3c; --ink3:#6e6e73; --ink4:#6e6e73;
+  --line:#e5e5ea; --line2:#d1d1d6;
+  --accent:#0071e3; --accent-soft:#e8f2ff;
+  --pillbg:#efede6;
+  --surf:#f2f2f7;
+
+  --pad-page:16px;  --pad-card:15px;
+  --gap-row:10px;   --gap-card:12px;
+  --mb-h:6px;       --mb-sub:6px;   --mb-lab:5px;
+  --pad-chip:4px 9px;
+  --bh:42px;
+
+  --fs-t1:26px; --fs-t3:16px; --fs-body:14px;
+  --fs-meta:12px; --fs-lbl:12px; --fs-mic:11.5px; --fs-cap:11px;
+  --lh-t1:1.2; --lh-t3:1.5; --lh-body:1.65; --lh-meta:1.5;
+
+  --r-card:14px; --r-btn:10px; --r-in:8px;
+  --sh-card:0 2px 10px rgba(0,0,0,.04);
+  --sh-btn:0 6px 16px rgba(0,113,227,.2);
+  --hair:inset 0 0 0 0 rgba(255,255,255,0);
+  --cardgrad:none;
+  --grainop:0;
+  --lineop:1;
+}
+/* --- L1 间距网格 --- */
+.stage.on-grid{
+  --pad-page:16px; --pad-card:16px;
+  --gap-row:12px;  --gap-card:16px;
+  --mb-h:8px;      --mb-sub:8px;   --mb-lab:6px;
+  --pad-chip:5px 10px;
+  --bh:44px;
+}
+/* --- L2 字阶 --- */
+.stage.on-type{
+  --fs-t1:28px; --fs-t3:17px; --fs-body:15px;
+  --fs-meta:13px; --fs-lbl:13px; --fs-mic:13px; --fs-cap:11px;
+  --lh-t1:1.24; --lh-t3:1.35; --lh-body:1.6; --lh-meta:1.55;
+}
+/* --- L3 圆角层级 --- */
+.stage.on-radius{ --r-card:16px; --r-btn:12px; --r-in:8px; }
+/* --- L4 色彩层级 --- */
+.stage.on-color{
+  --ink:#141414; --ink2:#3f3f42; --ink3:#6b6b70; --ink4:#8e8e93;
+  --line:rgba(0,0,0,.075); --line2:rgba(0,0,0,.11);
+  --accent:#0a6ed1; --accent-soft:#eaf2fc;
+  --pillbg:#efeeea;
+  --surf:rgba(0,0,0,.035);
+  --bg:#f4f4f6;
+}
+/* --- L5 阴影分层 --- */
+.stage.on-shade{
+  --sh-card:0 1px 2px rgba(16,16,20,.04), 0 8px 24px -8px rgba(16,16,20,.07);
+  --sh-btn:0 1px 2px rgba(10,110,209,.28), 0 8px 20px -6px rgba(10,110,209,.35);
+}
+/* --- L6 纹理与高光 --- */
+.stage.on-grain{
+  --grainop:.028;
+  --hair:inset 0 1px 0 rgba(255,255,255,.9);
+  --cardgrad:linear-gradient(180deg,#ffffff 0%,#fcfcfd 100%);
+}
+
+.stage{
+  position:relative;border-radius:16px;overflow:hidden;
+  background:var(--bg);
+  transition:background .5s cubic-bezier(.2,.7,.2,1);
+  border:1px solid rgba(0,0,0,.06);
+}
+.stage .grain{position:absolute;inset:0;pointer-events:none;opacity:var(--grainop);
+  transition:opacity .5s ease;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.sp{padding:20px 16px 22px;position:relative}
+
+.s-hero{margin:0 0 15px}
+.s-eyebrow{color:var(--accent);font-size:var(--fs-cap);font-weight:600;letter-spacing:.5px;
+  margin-bottom:var(--mb-h);transition:font-size .4s ease}
+.s-title{font-size:var(--fs-t1);font-weight:700;line-height:var(--lh-t1);letter-spacing:-.5px;
+  color:var(--ink);margin-bottom:var(--mb-sub);transition:font-size .4s cubic-bezier(.2,.7,.2,1)}
+.s-sub{color:var(--ink3);font-size:var(--fs-body);line-height:var(--lh-body);transition:font-size .4s}
+
+.s-card{background:var(--cardbg);background-image:var(--cardgrad);
+  border:1px solid var(--line);border-radius:var(--r-card);
+  padding:var(--pad-card);margin-bottom:var(--gap-card);box-shadow:var(--sh-card),var(--hair);
+  transition:padding .45s cubic-bezier(.2,.7,.2,1),border-radius .45s cubic-bezier(.2,.7,.2,1),
+    box-shadow .45s ease,margin .45s cubic-bezier(.2,.7,.2,1),border-color .45s ease}
+.s-rowtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--mb-lab)}
+.s-kicker{color:var(--ink3);font-size:var(--fs-lbl);transition:font-size .4s}
+.s-pill{background:var(--pillbg);color:var(--ink3);font-size:var(--fs-cap);
+  padding:var(--pad-chip);border-radius:999px;transition:padding .45s cubic-bezier(.2,.7,.2,1),background .45s}
+.s-ct{font-size:var(--fs-t3);font-weight:650;color:var(--ink);line-height:var(--lh-t3);margin-bottom:var(--mb-lab);
+  transition:font-size .4s cubic-bezier(.2,.7,.2,1)}
+.s-meta{color:var(--ink4);font-size:var(--fs-meta);line-height:var(--lh-meta);
+  transition:font-size .4s,color .45s}
+.s-bar{height:4px;border-radius:2px;background:var(--surf);margin-top:12px;overflow:hidden}
+.s-barfill{height:100%;width:61%;background:var(--accent);border-radius:2px;
+  transition:background .45s}
+.s-rowa{display:flex;align-items:center;justify-content:space-between;gap:var(--gap-row)}
+.s-div{height:1px;background:var(--line);margin:12px 0;transition:background .45s}
+.s-lt{font-size:var(--fs-body);font-weight:600;color:var(--ink);transition:font-size .4s}
+.s-lm{font-size:var(--fs-meta);color:var(--ink4);margin-top:3px;line-height:var(--lh-meta);
+  transition:font-size .4s}
+.s-ln{font-family:var(--mono);font-size:var(--fs-meta);color:var(--ink3);flex:none}
+.s-btns{display:flex;gap:var(--gap-row);margin-bottom:var(--gap-card)}
+.s-b{border-radius:999px;font-size:var(--fs-body);font-weight:650;height:var(--bh);line-height:var(--bh);
+  padding:0 20px;flex:1;text-align:center;transition:height .45s cubic-bezier(.2,.7,.2,1),font-size .4s,box-shadow .45s}
+.s-bp{background:var(--accent);color:#fff;box-shadow:var(--sh-btn)}
+.s-bs{background:var(--accent-soft);color:var(--accent);box-shadow:var(--hair)}
+.s-chips{display:flex;flex-wrap:wrap;gap:8px}
+.s-chip{background:var(--cardbg);border:1px solid var(--line);color:var(--ink3);
+  font-size:var(--fs-cap);padding:var(--pad-chip);border-radius:999px;
+  transition:padding .45s cubic-bezier(.2,.7,.2,1),border-color .45s,background .45s}
+
+.readout{margin-top:13px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
+.readout b{color:var(--accent);font-family:var(--mono);font-weight:600}
+
+/* table */
+table.tk{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tk th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink3);
+  text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line2);font-weight:500}
+table.tk td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tk td:first-child{color:var(--ink2);white-space:nowrap}
+table.tk code{font-family:var(--mono);font-size:11.5px;background:#fff;border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;white-space:nowrap}
+.bad{color:var(--accent);font-family:var(--mono);font-size:11.5px}
+.good{color:var(--teal);font-family:var(--mono);font-size:11.5px;font-weight:600}
+
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+footer b{color:var(--accent)}
+ol.steps{margin:8px 0 0;padding-left:20px}
+ol.steps li{margin-bottom:6px}
+.bigno{font-family:var(--mono);font-size:26px;color:var(--accent);line-height:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kick">Round 5 · Craft / Token Diagnosis</div>
+  <h1>你觉得它糙，不是因为没素材</h1>
+  <p class="lede">我把 <code style="font-family:var(--mono);font-size:13px">app.wxss</code> 全文跑了一遍量化审计。结果指向一个和「素材」完全无关的答案——下面这批合子里数和告警都是实跑出来的，不是我编的。</p>
+  <div class="verdict">
+    <div class="va">病灶是<b>相邻层级的区分度不够</b>：两个间距差 1px、两个字号差 0.5px。</div>
+    <p>肉眼能感觉到「没对齐」，但说不清哪里没对齐。这种不确定感累积起来，就是你说的「抽象、丑陋」。<b>它跟有没有好看的图片毫无关系</b>，一把没校准的尺子，量什么都不会整齐。</p>
+  </div>
+</header>
+
+<!-- 1 -->
+<section>
+  <div class="sh2"><span class="num">01</span><h2>实跑出来的四个数</h2><span class="note">源：app.wxss 107 行</span></div>
+  <div class="stat">
+    <div class="st">
+      <div class="sv">20</div>
+      <div class="sl">种间距取值</div>
+      <div class="sd">其中 <b>13 对相邻值只差 2rpx（1px）</b>，仅 60% 落在 4 的倍数上</div>
+      <div class="raw">2 4 8 10 12 14 16 18 20 22 24 26 28 30 32 34 40 48 72 88</div>
+    </div>
+    <div class="st">
+      <div class="sv">5<span style="font-size:15px">/9</span></div>
+      <div class="sl">个字号挤在 2px 内</div>
+      <div class="sd">22 / 23 / 24 / 25 / 26rpx 同时存在，相邻差 0.5px</div>
+      <div class="raw">22 23 24 25 26 28 32 43 52</div>
+    </div>
+    <div class="st">
+      <div class="sv">4<span style="font-size:15px">/5</span></div>
+      <div class="sl">个圆角挤在 16–28rpx</div>
+      <div class="sd">容器卡 14px、输入框 10px、提示条 8px、横幅 9px，没有层级关系</div>
+      <div class="raw">16 18 20 28 32 rpx</div>
+    </div>
+    <div class="st">
+      <div class="sv">10</div>
+      <div class="sl">种行高写法</div>
+      <div class="sd">倍数与绝对值混用，按钮靠 <code>line-height:84rpx</code> 撑高</div>
+      <div class="raw">1.2 1.5 1.6 1.65 1.7 | 48 72 76 84 88rpx</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:13px">
+    <p><b>顺手补两条之前提过的：</b>① <code>--green: #0071e3</code> 存的是蓝色，名实不符；② <code>.pill</code> 硬编码了 <code>#efede6</code>——这是整套冷灰里唯一的暖色，像白衬衫上一个油点。<b>30 个硬编码 hex 散在全局样式里</b>，没有一个是 alpha 派生的。</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section>
+  <div class="sh2"><span class="num">02</span><h2>为什么 AI 生成的东西确实糙</h2><span class="note">你的直觉是对的，三条机制</span></div>
+  <div class="card">
+    <div class="mech">
+      <div class="mn">A</div>
+      <div>
+        <div class="mt">精致感的本质是「可复现的确定性」，而 AI 是掷骰子</div>
+        <div class="mb">「精细」不是画得细，是<b>某个边框必须在某个位置、恰好 1px、恰好某个色值</b>。AI 每次生成都在重新采样，你没法说「把这个圆角从 28rpx 改成 32rpx」，只能重生成一遍然后赌它这次改对。<b>没有微调能力的工具，做不出精细的东西。</b></div>
+      </div>
+    </div>
+    <div class="mech">
+      <div class="mn">B</div>
+      <div>
+        <div class="mt">精致感来自层级密度，AI 一次生成把所有层压平成一层</div>
+        <div class="mb">你放大一个真正好的网站会发现它不是一层，是 <b>6–8 层</b>：底色 → 微渐变 → 噪点 → 顶部 1px 高光 → 内容 → 描边 → 分层阴影。AI 出图把这些全糊进一层像素里，<b>远看像，近看就散</b>。这就是你说「非精细化」的物理原因。</div>
+      </div>
+    </div>
+    <div class="mech">
+      <div class="mn">C</div>
+      <div>
+        <div class="mt">模型学的是分布的中心，产出的是「平均脸」</div>
+        <div class="mb">大家都在做的样子，恰恰是不够精致的样子。<b>精致需要偏离平均值，而偏离需要有人拍板。</b>这一步 AI 替不了。</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:13px;border-left:3px solid var(--teal)">
+    <div class="tag t2">结论</div>
+    <p style="font-size:14.5px;color:var(--ink)"><b>AI 适合做某一「层」里的那个资产，不适合做「合成」。</b>你要的是合成结果，不是资产本身——这就是为什么无论跑多少次生图，你拿到的都不是你想要的东西。<br>
+    但反过来有个好消息：<b>把「糙」变「精」的六件事里，一件素材都不需要。</b>下一节我证明给你看。</p>
+  </div>
+</section>
+
+<!-- 3 演示 -->
+<section>
+  <div class="sh2"><span class="num">03</span><h2>六层阶梯：不加任何素材，自己叠着看</h2><span class="note">左边是同一套组件，右边逐层打开</span></div>
+  <div class="lab">
+    <div class="stagewrap">
+      <div class="stage" id="stage">
+        <div class="grain"></div>
+        <div class="sp">
+          <div class="s-hero">
+            <div class="s-eyebrow">水电阶段 · 第 12 天</div>
+            <div class="s-title">今天要做三件事</div>
+            <div class="s-sub">根据昨天 4 条记录与 2 张现场照片生成</div>
+          </div>
+
+          <div class="s-card">
+            <div class="s-rowtop">
+              <span class="s-kicker">待确认 · 低置信</span>
+              <span class="s-pill">2 项</span>
+            </div>
+            <div class="s-ct">线管走向与图纸有出入</div>
+            <div class="s-meta">IMG_2042 · AI 暂判「问题」· 置信度 0.61</div>
+            <div class="s-bar"><div class="s-barfill"></div></div>
+          </div>
+
+          <div class="s-card">
+            <div class="s-rowa">
+              <div><div class="s-lt">材料到货</div><div class="s-lm">瓷砖 · 12 箱 / 已签收 10</div></div>
+              <div class="s-ln">83%</div>
+            </div>
+            <div class="s-div"></div>
+            <div class="s-rowa">
+              <div><div class="s-lt">约定验收</div><div class="s-lm">王工 · 周三下午到场</div></div>
+              <div class="s-ln">待办</div>
+            </div>
+          </div>
+
+          <div class="s-btns">
+            <div class="s-b s-bp">确认归类</div>
+            <div class="s-b s-bs">改判</div>
+          </div>
+          <div class="s-chips">
+            <span class="s-chip">施工日志</span><span class="s-chip">待办交付</span><span class="s-chip">已归档</span>
+          </div>
+        </div>
+      </div>
+      <div class="readout" id="readout"></div>
+    </div>
+
+    <div class="rail">
+      <div class="rh">预设</div>
+      <div class="presets" id="presets"></div>
+      <div class="rh">逐层（可任意叠加）</div>
+      <div class="toggles" id="toggles"></div>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:13px">
+    <div class="card"><h3>L1–L3 是最大的杠杆</h3><p>间距 / 字阶 / 圆角这三层，<b>一分钱素材都不用，也不改任何一个色值</b>，观感就有台阶式变化。你现在 90% 的「糙」在这三层里。</p></div>
+    <div class="card"><h3>L6 的噪点是隐藏武器</h3><p>纯色背景是廉价的头号来源。<b>一层 2.8% 不透明度的噪点</b>，纯 SVG 滤镜生成，不需要任何图片文件。加上卡片顶部那道 1px 白色内阴影，塑料感立刻消失。</p></div>
+    <div class="card"><h3>L5 阴影要分层</h3><p>现在只有单层 <code>0 4rpx 20rpx rgba(0,0,0,.04)</code>。真实世界是两个光源：<b>环境光（大扩散低不透明度）+ 主光（带方向）</b>。叠两层才有体积感。</p></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section>
+  <div class="sh2"><span class="num">04</span><h2>Token 对照表</h2><span class="note">左边现在的值，右边建议值，可直接写进 app.wxss</span></div>
+  <div class="card">
+    <table class="tk">
+      <tr><th>项</th><th>现在</th><th>建议</th><th>为什么</th></tr>
+      <tr><td>间距</td><td class="bad">20 种</td><td class="good">7 种</td><td>只用 4 8 12 16 20 24 32 48（rpx 翻倍）。<b>相邻档至少差一档</b>，杜绝差 2rpx 的伪层级</td></tr>
+      <tr><td>字号</td><td class="bad">22 23 24 25 26 28 32 43 52</td><td class="good">22 26 30 34 44 56</td><td>6 级。相邻比例 1.13–1.18，肉眼可辨但不跳跃；<b>23/25 这种奇数全部消灭</b></td></tr>
+      <tr><td>圆角</td><td class="bad">16 18 20 28 32</td><td class="good">16 / 24 / 40 / ∞</td><td>四级：控件 16 / 卡片 24 / 容器 40 / 胶囊 ∞。<b>层级之间必须差得出来</b></td></tr>
+      <tr><td>行高</td><td class="bad">倍数 + 绝对值混用</td><td class="good">纯倍数 4 档</td><td>标题 1.24 / 次级 1.35 / 正文 1.6 / 注释 1.55。<b>按钮不许用 line-height 撑高</b>，改用 min-height + flex 居中</td></tr>
+      <tr><td>描边</td><td class="bad">30 个硬编码 hex</td><td class="good">rgba 派生</td><td><code>rgba(0,0,0,.075)</code> 替代 <code>#e5e5ea</code>。<b>深色模式 / 不同背景自动适配</b>，且不用维护两套值</td></tr>
+      <tr><td>文字层级</td><td class="bad">ink / ink-soft / muted 三级</td><td class="good">四级 ink→ink4</td><td>现在 ink3 和 muted 是同一个 <code>#6e6e73</code>，等于白分一级</td></tr>
+      <tr><td><code>--green</code></td><td class="bad">存的是蓝色 #0071e3</td><td class="good">改名 <code>--accent</code></td><td>名实不符会让后来的人（包括 AI）误判语义</td></tr>
+      <tr><td><code>.pill</code> 底色</td><td class="bad">#efede6（唯一暖色）</td><td class="good">并入 surface 体系</td><td>冷灰体系里混一个暖米色，是「脏」的来源</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 5 -->
+<section>
+  <div class="sh2"><span class="num">05</span><h2>那素材这一层到底怎么办</h2><span class="note">诚实版，AI 能做什么不能做什么</span></div>
+  <div class="grid3">
+    <div class="card">
+      <div class="tag t2">AI 能做 · 单体资产</div>
+      <h3>一次一件，不要一次一页</h3>
+      <p>一个空状态插画、一张纹理、一组图标的方向稿、一张引导配图。<b>让它出「零件」，不是出「成品」。</b>零件可以用代码框在正确的位置上，成品不行。</p>
+    </div>
+    <div class="card">
+      <div class="tag">AI 别做 · 整页</div>
+      <h3>整页生图是死路</h3>
+      <p>因为它是位图：<b>文字没法改、间距没法调、深浅色没法切、数据没法套</b>。你最后会面对一个好看但不能用的东西。这就是你反复踩到的那个坑。</p>
+    </div>
+    <div class="card">
+      <div class="tag">装修场景 · 特殊约束</div>
+      <h3>工地照片必须真实</h3>
+      <p><b>这条是反直觉的：你的产品里，AI 生成的「现场照片」会直接摧毁信任。</b>用户拿它记录纠纷、留证、给工长看。<b>精修的实时.Apply末端在这里恰恰是扣分。</b>AI 该做的是「把真实照片整理好」，不是「生成照片」。</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:13px">
+    <h3>小程序还有两条硬限制，得提前认</h3>
+    <p>① <b>字体：</b>中文字体包动辄几 MB，小程序有包体和加载限制，基本只能吃系统字（PingFang SC）。所以「换字体」这条路性价比极低，<b>别指望靠字体出高级感</b>——正因如此，间距和字阶才更重要。<br>
+    ② <b>渲染：</b>不支持全部 CSS 特性，backdrop-filter 在低端机上会掉帧。<b>上面六层里除了 L6 噪点需要验一帧，其余全是零风险的纯数值调整。</b></p>
+  </div>
+</section>
+
+<footer>
+  <b>审计可复现：</b><code style="font-family:var(--mono)">_token_audit.js</code> 在工作区，指向任何 wxss 都能重跑。<br>
+  本页未修改任何源码。<br><br>
+  <b style="color:var(--ink)">如果要动手，我建议这个顺序：</b>
+  <ol class="steps">
+    <li><b>先只做 L1–L3（间距/字阶/圆角）</b>——只改 <code>app.wxss</code> 一处，14 个页面同步受益，零素材零风险，做完立刻能感觉到区别</li>
+    <li>L4 色彩层级 + <code>--green</code> 改名 + <code>.pill</code> 并轨——同样单点改动，但会大面积覆盖视觉效果，需要过一遍页面</li>
+    <li>L5 阴影分层——只动两个变量</li>
+    <li>L6 噪点——先在真机验一帧再决定要不要上</li>
+    <li>素材层最后做，且按「按 disadvantage 单体零件」的方式做</li>
+  </ol>
+</footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+var PRESETS=[
+  {k:"now",   v:"现状",   d:"你现在的",   layers:[]},
+  {k:"grid",  v:"收敛",   d:"仅前三层",   layers:["grid","type","radius"]},
+  {k:"polish",v:"精修",   d:"六层全开",   layers:["grid","type","radius","color","shade","grain"]}
+];
+var LAYERS=[
+  {k:"grid",   t:"L1 间距网格", d:"20 种收进 8 种 · 全部 4 的倍数"},
+  {k:"type",   t:"L2 字阶",     d:"9 种收进 6 级 · 消灭相差 0.5px 的相邻级"},
+  {k:"radius", t:"L3 圆角层级", d:"5 种收进 4 级 · 容器/卡片/控件/胶囊"},
+  {k:"color",  t:"L4 色彩层级", d:"文字四级 · 描边改 alpha 派生 · 干掉唯一的暖色"},
+  {k:"shade",  t:"L5 阴影分层", d:"单层 → 环境光 + 主光"},
+  {k:"grain",  t:"L6 纹理高光", d:"2.8% 噪点 + 顶部 1px 内阴影 + 卡片微渐变"}
+];
+var NOTES=[
+  "现在的样子。说不清哪里不对，但就是不对——问题出在相邻层级差得太近，眼睛一直在试图找规律而找不到。",
+  "只动了间距网格。padding 从 15px 变成 16px、行间距从 10px 变成 12px——数值几乎没变，但因为每处都落在同一把尺子上，突然就有秩序了。",
+  "加上字阶。原本 22/23/24/25/26rpx 五个字号现在收敛成两级，注释和正文第一次真正拉开了距离。",
+  "加上圆角层级。卡片 16 / 控件 12 / 内嵌 8——三级之间有明确递减，不再是四个差不多的值随便填。",
+  "加上色彩层级。文字从三级变四级，描边从写死的灰改成 alpha 派生。这是第一次出现「空气感」。",
+  "加上阴影分层。单层变双层（环境光 + 主光），卡片开始有重量。注意它没变得更黑，只是更立体。",
+  "全部打开。这六层<b>一件素材都没用</b>——噪点是纯 SVG 滤镜，质感是代码堆出来的。"
+];
+
+var stage=$("stage"), ph=$("presets"), th=$("toggles");
+var cur={grid:0,type:0,radius:0,color:0,shade:0,grain:0};
+
+PRESETS.forEach(function(p){
+  var e=document.createElement("div");
+  e.className="ps"; e.setAttribute("data-p",p.k);
+  e.innerHTML='<div class="pv">'+p.v+'</div><div class="pd">'+p.d+'</div>';
+  e.onclick=function(){
+    LAYERS.forEach(function(l){cur[l.k]=0;});
+    p.layers.forEach(function(k){cur[k]=1;});
+    apply(p.k);
+  };
+  ph.appendChild(e);
+});
+
+LAYERS.forEach(function(l){
+  var e=document.createElement("div");
+  e.className="tg"; e.setAttribute("data-t",l.k);
+  e.innerHTML='<div class="bx"></div><div><div class="tt">'+l.t+'</div><div class="td">'+l.d+'</div></div>';
+  e.onclick=function(){ cur[l.k]=cur[l.k]?0:1; apply(null); };
+  th.appendChild(e);
+});
+
+var ORDER=["grid","type","radius","color","shade","grain"];
+function apply(presetKey){
+  ORDER.forEach(function(k){ stage.classList.toggle("on-"+k, !!cur[k]); });
+  th.querySelectorAll(".tg").forEach(function(e){
+    e.classList.toggle("on", !!cur[e.getAttribute("data-t")]);
+  });
+  ph.querySelectorAll(".ps").forEach(function(e){
+    e.classList.toggle("on", e.getAttribute("data-p")===presetKey);
+  });
+  var n=ORDER.filter(function(k){return cur[k];}).length;
+  $("readout").innerHTML='<span class="bigno">'+(n+1)+'</span> / 7 层　'
+    +(presetKey?('预设「'+PRESETS.filter(function(p){return p.k===presetKey;})[0].v+'」'):'自定义')
+    +'　—　'+NOTES[n];
+}
+apply("now");
+})();
+</script>
+</body>
+</html>

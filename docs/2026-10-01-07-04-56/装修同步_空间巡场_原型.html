@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>装修同步 · 空间巡场原型</title>
+<style>
+  :root{
+    --bg:#F6F5F2; --surface:#FFFFFF; --ink:#1C1B19;
+    --sub:#6F6B63; --faint:#9C978E; --line:#E7E4DE;
+    --accent:#0E7C66; --accent-soft:#E7F1ED;
+    --warn:#B4462F;
+    --serif:"Songti SC","Noto Serif SC",serif;
+    --sans:"PingFang SC","Noto Sans SC",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:15px;line-height:1.72;padding:40px 20px 72px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+
+  header{margin-bottom:30px}
+  .eyebrow{font-size:12px;letter-spacing:.18em;color:var(--faint);margin-bottom:10px}
+  h1{font-family:var(--serif);font-weight:700;font-size:34px;line-height:1.3;margin-bottom:12px}
+  .lede{font-size:15.5px;color:var(--sub);max-width:760px}
+
+  .stage{
+    display:grid;grid-template-columns:390px 1fr;gap:40px;
+    align-items:start;margin-top:34px;
+  }
+
+  /* ── 手机 ── */
+  .phone{
+    width:390px;height:760px;border-radius:44px;
+    background:#111;padding:9px;box-shadow:0 24px 60px rgba(0,0,0,.22);
+    position:sticky;top:24px;
+  }
+  .screen{
+    width:100%;height:100%;border-radius:36px;overflow:hidden;
+    position:relative;background:#E9E3D8;
+  }
+
+  /* 背景场景双层 */
+  .scene{
+    position:absolute;inset:0;
+    transition:opacity .55s cubic-bezier(.4,0,.2,1), transform .55s cubic-bezier(.4,0,.2,1);
+    transform-origin:50% 55%;
+  }
+  .scene svg{width:100%;height:100%;display:block}
+  .scene--out{opacity:0;transform:scale(.965)}
+  .scene--in{opacity:0;transform:scale(1.045)}
+
+  /* 顶部浮层 */
+  .top{
+    position:absolute;top:0;left:0;right:0;padding:14px 18px 40px;
+    background:linear-gradient(180deg,rgba(28,27,25,.62) 0%,rgba(28,27,25,.34) 52%,transparent 100%);
+    color:#fff;pointer-events:none;z-index:3;
+  }
+  .statusbar{
+    display:flex;justify-content:space-between;font-size:12px;
+    opacity:.85;margin-bottom:16px;font-variant-numeric:tabular-nums;
+  }
+  .cur-name{font-family:var(--serif);font-size:27px;font-weight:700;letter-spacing:.01em;line-height:1.2}
+  .cur-meta{margin-top:5px;font-size:12.5px;opacity:.9;display:flex;gap:12px;flex-wrap:wrap}
+  .cur-meta b{font-weight:600}
+  .dot-warn{color:#FFB4A0}
+
+  /* 进度条 */
+  .prog{
+    margin-top:11px;height:3px;border-radius:2px;
+    background:rgba(255,255,255,.28);overflow:hidden;max-width:190px;
+  }
+  .prog span{display:block;height:100%;background:#7FD3BE;transition:width .5s}
+
+  /* 底部索引条 */
+  .dock{
+    position:absolute;left:0;right:0;bottom:0;z-index:4;
+    padding:14px 14px 26px;
+    background:linear-gradient(0deg,rgba(20,19,17,.74) 0%,rgba(20,19,17,.46) 62%,transparent 100%);
+  }
+  .index{
+    display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;
+    scrollbar-width:none;
+  }
+  .index::-webkit-scrollbar{display:none}
+  .item{
+    flex:0 0 auto;min-width:74px;padding:9px 13px 10px;border-radius:13px;
+    background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.17);
+    color:#fff;cursor:pointer;transition:all .25s;
+    display:flex;flex-direction:column;gap:5px;align-items:flex-start;
+  }
+  .item:hover{background:rgba(255,255,255,.22)}
+  .item.on{
+    background:#F6F5F2;border-color:#F6F5F2;color:var(--ink);
+    box-shadow:0 6px 18px rgba(0,0,0,.28);
+  }
+  .item__n{font-size:13.5px;font-weight:600;white-space:nowrap}
+  .item__s{font-size:10.5px;opacity:.72;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .item.on .item__s{opacity:.62}
+  .bar{
+    width:100%;height:2.5px;border-radius:2px;
+    background:rgba(255,255,255,.24);overflow:hidden;margin-top:1px;
+  }
+  .item.on .bar{background:rgba(0,0,0,.12)}
+  .bar span{display:block;height:100%;background:#7FD3BE;transition:width .45s}
+  .item--warn .bar span{background:#E8815F}
+  .item.on .bar span{background:var(--accent)}
+  .item.on.item--warn .bar span{background:var(--warn)}
+
+  /* 悬浮 AI */
+  .fab{
+    position:absolute;right:16px;bottom:112px;z-index:5;
+    width:48px;height:48px;border-radius:50%;
+    background:var(--accent);color:#fff;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 22px rgba(14,124,102,.42);
+    font-size:11px;font-weight:600;letter-spacing:.02em;
+  }
+
+  /* 切换提示 */
+  .hint{
+    position:absolute;left:50%;bottom:104px;transform:translateX(-50%);
+    z-index:5;font-size:11.5px;color:#fff;background:rgba(28,27,25,.55);
+    padding:5px 12px;border-radius:999px;opacity:0;
+    transition:opacity .3s;pointer-events:none;white-space:nowrap;
+  }
+  .hint.show{opacity:1}
+
+  /* 右侧说明 */
+  .side h2{font-family:var(--serif);font-weight:700;font-size:21px;margin-bottom:8px}
+  .side h3{font-size:14.5px;font-weight:600;margin:22px 0 8px}
+  .side p{font-size:14px;color:var(--sub);margin-bottom:10px}
+  .side ul{margin:6px 0 0 19px}
+  .side li{font-size:14px;color:var(--sub);margin-bottom:6px}
+  .card{
+    background:var(--surface);border:1px solid rgba(0,0,0,.06);
+    border-radius:14px;padding:20px;margin-bottom:16px;
+    box-shadow:0 8px 24px rgba(0,0,0,.04);
+  }
+  .flag{
+    background:#FBF3EF;border-left:3px solid var(--warn);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:16px;
+  }
+  .flag h3{color:var(--warn);margin-top:0}
+  .flag li{color:var(--ink)}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--bg);padding:2px 6px;border-radius:4px}
+  .kbd{
+    display:inline-block;font-size:11px;padding:1px 6px;border-radius:5px;
+    background:var(--bg);border:1px solid var(--line);margin:0 2px;
+  }
+  footer{text-align:center;font-size:12.5px;color:var(--faint);margin-top:40px}
+
+  @media(max-width:900px){
+    .stage{grid-template-columns:1fr}
+    .phone{position:static;margin:0 auto}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">装修同步 · 空间巡场</div>
+    <h1>工序索引 → 空间巡场</h1>
+    <p class="lede">
+      索引维度从「施工工序」换成「空间」。索引项与背景场景图一一对应，切换即视角展开。
+      <b>工序颗粒度（水电/防水/泥瓦…）已整体移除。</b>
+    </p>
+  </header>
+
+  <div class="stage">
+    <!-- 手机原型 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="scene" id="sceneA"></div>
+        <div class="scene" id="sceneB"></div>
+
+        <div class="top">
+          <div class="statusbar"><span>9:41</span><span>装修同步</span></div>
+          <div class="cur-name" id="curName">客厅</div>
+          <div class="cur-meta" id="curMeta"></div>
+          <div class="prog"><span id="curProg" style="width:0%"></span></div>
+        </div>
+
+        <div class="hint" id="hint"></div>
+        <button class="fab" title="AI 助手">AI</button>
+
+        <div class="dock">
+          <div class="index" id="index"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 说明 -->
+    <div class="side">
+      <div class="card">
+        <h2>试一下</h2>
+        <p>点底部索引项切换空间，或用键盘 <span class="kbd">←</span> <span class="kbd">→</span>。</p>
+        <p>注意三件事：<b>①</b> 索引项与场景一一对应；<b>②</b> 切换是交叉淡入 + 轻微推近（视野展开感）；<b>③</b> 顶部状态跟着切。</p>
+      </div>
+
+      <div class="card">
+        <h2>这个模块的定位</h2>
+        <h3>它只负责两件事</h3>
+        <ul>
+          <li><b>我在哪</b> —— 当前空间名 + 场景</li>
+          <li><b>我还能去哪</b> —— 底部空间列表</li>
+          <li>顺带：<b>这里怎么样</b> —— 进度 + 问题数</li>
+        </ul>
+        <h3>它不负责</h3>
+        <ul>
+          <li>施工工序拆解（已移除）</li>
+          <li>单个点位的合格判定 → 归下一层「节点层」</li>
+          <li>现场照片的产生 → 归 UGC</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>数据契约</h2>
+        <p>索引项与场景<b>共用同一个 <code>id</code></b>，同属一个数组。不允许出现"有索引没场景"或"有场景没索引"。</p>
+      </div>
+
+      <div class="flag">
+        <h3>还没想清楚的（需要拍板）</h3>
+        <ul>
+          <li><b>场景图从哪来</b> —— 现在原型里是我画的线稿占位。<b>用户还没拍照时显示什么？</b>这是最大的一条。</li>
+          <li><b>"展开浏览"要到什么程度</b> —— 只要切换时的视野感（当前这样），还是要能在场景内环视转头？后者成本高得多。</li>
+          <li><b>上下手势给谁</b> —— 原来切工序，现在工序没了，这个手势要么取消要么重新安排。</li>
+          <li><b>相邻关系由谁定</b> —— 客厅"往左"是主卧，这是物理事实，但要预置还是用户自标？现在原型是简单的上一项/下一项。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>装修同步 · 空间巡场原型 · 2026-10-02 · 场景为线稿占位</footer>
+</div>
+
+<script>
+/* ═══ 数据：索引项 = 场景，同一个数组 ═══ */
+const SPACES=[
+  {id:'living',name:'客厅',  done:12,total:16,flaws:0},
+  {id:'bed1',  name:'主卧',  done:14,total:14,flaws:0},
+  {id:'bed2',  name:'次卧',  done:8, total:13,flaws:1},
+  {id:'kitchen',name:'厨房', done:11,total:11,flaws:0},
+  {id:'bath',  name:'卫生间',done:0, total:9, flaws:0},
+  {id:'balcony',name:'阳台', done:0, total:5, flaws:0}
+];
+
+/* ═══ 场景绘制：一点透视房间 + 家具线稿 ═══ */
+const INK='#2A2825', WALL='#EFEAE0', WALL2='#E9E3D8', FLOOR='#E1DACB',
+      CEIL='#F5F1E9', FURN='#FBF8F2';
+
+function shell(){
+  const px=320,py=180,pw=560,ph=460,W=1200,H=900;
+  return `
+    <path d="M0 0 L${W} 0 L${px+pw} ${py} L${px} ${py} Z" fill="${CEIL}"/>
+    <path d="M0 0 L${px} ${py} L${px} ${py+ph} L0 ${H} Z" fill="${WALL2}"/>
+    <path d="M${W} 0 L${px+pw} ${py} L${px+pw} ${py+ph} L${W} ${H} Z" fill="${WALL2}"/>
+    <rect x="${px}" y="${py}" width="${pw}" height="${ph}" fill="${WALL}"/>
+    <path d="M0 ${H} L${W} ${H} L${px+pw} ${py+ph} L${px} ${py+ph} Z" fill="${FLOOR}"/>
+    <g stroke="${INK}" stroke-width="2" fill="none" stroke-linejoin="round">
+      <path d="M${px} ${py} L${px} ${py+ph} M${px+pw} ${py} L${px+pw} ${py+ph}"/>
+      <path d="M${px} ${py} L${px+pw} ${py} M${px} ${py+ph} L${px+pw} ${py+ph}"/>
+      <path d="M0 0 L${px} ${py} M${W} 0 L${px+pw} ${py}"/>
+      <path d="M0 ${H} L${px} ${py+ph} M${W} ${H} L${px+pw} ${py+ph}"/>
+    </g>`;
+}
+// 地面上的家具统一用浅填充+墨线
+const F=(x,y,w,h,r=5)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${FURN}" stroke="${INK}" stroke-width="2"/>`;
+const Fo=(x,y,w,h,r=5)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${FURN}" stroke="${INK}" stroke-width="1.6" opacity=".9"/>`;
+
+const SCENES={
+  living:`
+    <!-- 挂画 / 电视 -->
+    <rect x="530" y="280" width="150" height="86" rx="4" fill="#3A3833"/>
+    ${F(500,560,210,54)}
+    <!-- 沙发 -->
+    ${F(150,690,300,110,12)}
+    ${F(150,655,300,44,12)}
+    <line x1="300" y1="700" x2="300" y2="790" stroke="${INK}" stroke-width="1.4" opacity=".35"/>
+    <!-- 茶几 -->
+    ${F(520,720,190,74,8)}
+    <line x1="560" y1="740" x2="670" y2="740" stroke="${INK}" stroke-width="1.4" opacity=".3"/>
+    <!-- 落地灯 -->
+    <line x1="880" y1="680" x2="880" y2="800" stroke="${INK}" stroke-width="2.4"/>
+    <path d="M850 680 L910 680 L898 648 L862 648 Z" fill="${FURN}" stroke="${INK}" stroke-width="2"/>
+    <!-- 绿植 -->
+    <path d="M250 940 L250 890 M250 890 C230 870 232 848 250 840 C268 848 270 870 250 890"
+          stroke="${INK}" stroke-width="2" fill="none"/>`,
+  bed1:`
+    <!-- 床 -->
+    ${F(430,640,340,170,10)}
+    ${F(452,592,96,54,8)}${F(652,592,96,54,8)}
+    <line x1="600" y1="660" x2="600" y2="790" stroke="${INK}" stroke-width="1.4" opacity=".3"/>
+    <!-- 床头柜 -->
+    ${Fo(360,660,58,62)}
+    <!-- 衣柜 -->
+    ${F(120,300,190,330,6)}
+    <line x1="215" y1="310" x2="215" y2="620" stroke="${INK}" stroke-width="1.6" opacity=".5"/>
+    <circle cx="200" cy="465" r="4" fill="${INK}"/><circle cx="232" cy="465" r="4" fill="${INK}"/>
+    <!-- 挂画 -->
+    <rect x="700" y="290" width="110" height="80" rx="4" fill="${FURN}" stroke="${INK}" stroke-width="2"/>`,
+  bed2:`
+    ${F(470,660,280,150,10)}
+    ${F(492,614,80,50,8)}
+    <!-- 书桌 -->
+    ${F(120,650,230,40,5)}
+    ${F(130,690,20,90,3)}${F(320,690,20,90,3)}
+    <!-- 书架 -->
+    ${F(780,270,120,300,5)}
+    <line x1="790" y1="360" x2="890" y2="360" stroke="${INK}" stroke-width="1.6" opacity=".45"/>
+    <line x1="790" y1="450" x2="890" y2="450" stroke="${INK}" stroke-width="1.6" opacity=".45"/>
+    <!-- 窗 -->
+    <rect x="600" y="270" width="130" height="140" rx="4" fill="#DCEAF2" stroke="${INK}" stroke-width="2"/>
+    <line x1="665" y1="270" x2="665" y2="410" stroke="${INK}" stroke-width="1.6"/>`,
+  kitchen:`
+    <!-- 吊柜 -->
+    ${F(340,240,240,110,5)}${F(600,240,240,110,5)}
+    <!-- 台面 -->
+    ${F(330,520,520,70,5)}
+    <!-- 下柜分格 -->
+    <line x1="500" y1="530" x2="500" y2="580" stroke="${INK}" stroke-width="1.5" opacity=".45"/>
+    <line x1="680" y1="530" x2="680" y2="580" stroke="${INK}" stroke-width="1.5" opacity=".45"/>
+    <!-- 灶台 -->
+    <rect x="360" y="500" width="120" height="20" rx="4" fill="#4A4740"/>
+    <circle cx="395" cy="510" r="9" fill="none" stroke="${FURN}" stroke-width="2"/>
+    <circle cx="445" cy="510" r="9" fill="none" stroke="${FURN}" stroke-width="2"/>
+    <!-- 抽油烟机 -->
+    <path d="M355 500 L355 400 L485 400 L485 500 Z" fill="${FURN}" stroke="${INK}" stroke-width="2"/>
+    <rect x="380" y="360" width="80" height="40" rx="4" fill="${FURN}" stroke="${INK}" stroke-width="2"/>
+    <!-- 水槽 -->
+    <rect x="620" y="530" width="100" height="46" rx="5" fill="#E7EDF0" stroke="${INK}" stroke-width="2"/>
+    <!-- 冰箱 -->
+    ${F(880,600,120,230,6)}
+    <line x1="890" y1="700" x2="990" y2="700" stroke="${INK}" stroke-width="1.6" opacity=".4"/>`,
+  bath:`
+    <!-- 镜柜 -->
+    ${F(340,250,180,150,5)}
+    <rect x="352" y="262" width="156" height="126" rx="4" fill="#DCE9EE" stroke="${INK}" stroke-width="1.6"/>
+    <!-- 洗手台 -->
+    ${F(330,540,210,60,6)}
+    <ellipse cx="435" cy="546" rx="62" ry="18" fill="#E7EDF0" stroke="${INK}" stroke-width="2"/>
+    <!-- 马桶 -->
+    <path d="M660 660 Q660 600 700 600 L740 600 L740 660 Z" fill="${FURN}" stroke="${INK}" stroke-width="2"/>
+    <ellipse cx="700" cy="668" rx="46" ry="24" fill="${FURN}" stroke="${INK}" stroke-width="2"/>
+    <!-- 淋浴 -->
+    <line x1="900" y1="620" x2="900" y2="700" stroke="${INK}" stroke-width="2"/>
+    <path d="M870 700 L930 700 L930 780 L870 780 Z" fill="#E7EDF0" stroke="${INK}" stroke-width="1.8" opacity=".85"/>
+    <path d="M900 300 L900 420 M868 420 L932 420" stroke="${INK}" stroke-width="2.2" fill="none"/>
+    <!-- 花洒头 -->
+    <ellipse cx="900" cy="428" rx="34" ry="10" fill="${FURN}" stroke="${INK}" stroke-width="2"/>`,
+  balcony:`
+    <!-- 晾衣杆 -->
+    <line x1="300" y1="330" x2="900" y2="330" stroke="${INK}" stroke-width="2.4"/>
+    <line x1="380" y1="330" x2="380" y2="430" stroke="${INK}" stroke-width="1.8"/>
+    <line x1="500" y1="330" x2="500" y2="410" stroke="${INK}" stroke-width="1.8"/>
+    <line x1="620" y1="330" x2="620" y2="440" stroke="${INK}" stroke-width="1.8"/>
+    <line x1="740" y1="330" x2="740" y2="400" stroke="${INK}" stroke-width="1.8"/>
+    <!-- 洗衣机 -->
+    ${F(330,610,150,180,8)}
+    <circle cx="405" cy="700" r="46" fill="#E7EDF0" stroke="${INK}" stroke-width="2"/>
+    <!-- 拖把桶 -->
+    ${Fo(560,690,80,100,6)}
+    <!-- 窗 -->
+    <rect x="700" y="220" width="240" height="180" rx="5" fill="#DCEAF2" stroke="${INK}" stroke-width="2"/>
+    <line x1="820" y1="220" x2="820" y2="400" stroke="${INK}" stroke-width="1.6"/>`
+};
+
+function sceneSVG(sp){
+  return `<svg viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    ${shell()}${SCENES[sp.id]||''}
+  </svg>`;
+}
+
+/* ═══ 状态 ═══ */
+let cur=0, layerTop=0;
+const layers=[document.getElementById('sceneA'),document.getElementById('sceneB')];
+
+function pct(s){return s.total? Math.round(s.done/s.total*100):0;}
+function stateOf(s){
+  if(s.flaws>0) return 'warn';
+  if(s.done===0) return 'todo';
+  if(s.done>=s.total) return 'done';
+  return 'doing';
+}
+
+function paintTop(){
+  const s=SPACES[cur];
+  document.getElementById('curName').textContent=s.name;
+  const st=stateOf(s);
+  const label={todo:'还没开始',doing:'巡查中',done:'已巡完',warn:'有问题'}[st];
+  document.getElementById('curMeta').innerHTML=
+    `<span>${label}</span><span><b>${s.done}</b>/${s.total} 已查</span>`+
+    (s.flaws?`<span class="dot-warn">${s.flaws} 处待处理</span>`:'');
+  document.getElementById('curProg').style.width=pct(s)+'%';
+}
+
+function paintIndex(){
+  document.getElementById('index').innerHTML=SPACES.map((s,i)=>{
+    const st=stateOf(s);
+    return `<div class="item ${i===cur?'on':''} ${st==='warn'?'item--warn':''}" data-i="${i}">
+      <span class="item__n">${s.name}</span>
+      <span class="item__s">${s.done}/${s.total}</span>
+      <span class="bar"><span style="width:${pct(s)}%"></span></span>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.item').forEach(el=>{
+    el.onclick=()=>go(+el.dataset.i);
+  });
+}
+
+function go(i){
+  if(i<0||i>=SPACES.length||i===cur) return;
+  const dir=i>cur?'right':'left';
+  cur=i;
+  const out=layers[layerTop];
+  const inn=layers[1-layerTop];
+  layerTop=1-layerTop;
+
+  inn.innerHTML=sceneSVG(SPACES[cur]);
+  inn.className='scene scene--in';
+  // 方向感的微位移：从切换方向推入
+  inn.style.transformOrigin = dir==='right' ? '62% 55%' : '38% 55%';
+  void inn.offsetWidth;               // 强制回流，让过渡生效
+  inn.className='scene';
+  inn.style.opacity='1';
+
+  out.className='scene';
+  out.style.opacity='0';
+  out.style.transform='scale(.965)';
+
+  paintTop(); paintIndex();
+
+  const h=document.getElementById('hint');
+  h.textContent=`切换到「${SPACES[cur].name}」`;
+  h.classList.add('show');
+  clearTimeout(h._t);
+  h._t=setTimeout(()=>h.classList.remove('show'),1100);
+}
+
+/* 初始化 */
+layers[layerTop].innerHTML=sceneSVG(SPACES[cur]);
+layers[layerTop].style.opacity='1';
+layers[1-layerTop].style.opacity='0';
+paintTop(); paintIndex();
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft')  go(cur-1);
+});
+</script>
+</body>
+</html>

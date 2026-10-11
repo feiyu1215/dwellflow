@@ -1,0 +1,31 @@
+.notice { border: 1rpx solid #ecd5ad; background: var(--warning-soft); color: var(--warning); border-radius: 18rpx; padding: 20rpx; margin-bottom: 24rpx; font-size: 24rpx; line-height: 1.6; }
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14rpx; margin-bottom: 22rpx; }
+.mode-card { background: #fff; border: 2rpx solid var(--line); border-radius: 22rpx; padding: 24rpx; }
+.mode-card.active { border-color: var(--green); background: var(--green-soft); }
+.mode-title { font-weight: 700; margin-bottom: 8rpx; }
+.resource-heading { font-weight: 700; margin: 20rpx 0 10rpx; }
+.resource-option { display: block; background: #f7f5ef; border-radius: 14rpx; padding: 18rpx; margin-bottom: 10rpx; }
+.main-action { margin: 0 0 24rpx; }
+.preview-card { border-color: #b8d8cd; }
+.content-preview { margin-top: 24rpx; border-top: 1rpx solid var(--line); }
+.preview-section-head { padding: 22rpx 0 10rpx; }
+.preview-section-title { font-weight: 700; }
+.content-row { padding: 18rpx; margin-top: 10rpx; border-radius: 16rpx; background: var(--surface-soft); }
+.content-title { font-weight: 700; line-height: 1.45; }
+.content-detail { margin: 8rpx 0; color: var(--text); font-size: 25rpx; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.omitted-note { padding: 14rpx 0 2rpx; color: #80501b; }
+.empty-content { margin-top: 20rpx; }
+.preview-subtitle { margin-top: 26rpx; padding-top: 22rpx; border-top: 1rpx solid var(--line); font-weight: 700; }
+.file-row { display: flex; justify-content: space-between; align-items: center; gap: 16rpx; padding: 18rpx 0; border-bottom: 1rpx solid var(--line); }
+.file-name { min-width: 0; overflow-wrap: anywhere; }
+.preview-help, .task-meta, .legacy-note { margin: 18rpx 0; }
+.error-note { color: var(--danger); font-size: 24rpx; line-height: 1.6; margin: 18rpx 0; }
+.history-title { margin-top: 34rpx; align-items: center; }
+.history-title .section-title { margin-bottom: 0; }
+.task-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 20rpx; }
+.task-actions .danger.wide { grid-column: 1 / 3; }
+.tiny { line-height: 68rpx; font-size: 24rpx; padding: 0 14rpx; margin: 0; }
+.more-button { margin-top: 18rpx; }
+.import-button, .paste-button { margin: 20rpx 0; }
+.import-summary { margin-top: 20rpx; line-height: 1.65; }
+.legacy-input { min-height: 240rpx; font-size: 22rpx; }

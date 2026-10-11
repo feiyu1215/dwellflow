@@ -1,0 +1,76 @@
+/* R8-UI-4A: R7-system settings page. R7 has no standalone high-fidelity settings master. */
+.settings-page { min-height: 100vh; padding-top: 18rpx; padding-bottom: calc(72rpx + env(safe-area-inset-bottom)); background: #f4f5f3; }
+.settings-nav { display: grid; grid-template-columns: 132rpx minmax(0, 1fr) 132rpx; align-items: center; min-height: 76rpx; }
+.settings-back { min-height: 60rpx; color: #0a6cff; font-size: 22rpx; line-height: 60rpx; }
+.settings-nav-title { color: #171918; font-size: 25rpx; font-weight: 720; text-align: center; }
+.settings-nav-spacer { min-height: 1rpx; }
+.profile-stage { display: flex; align-items: center; gap: 24rpx; padding: 34rpx 4rpx 40rpx; }
+.profile-avatar { width: 112rpx; height: 112rpx; flex: none; border: 1rpx solid #d9deda; border-radius: 50%; color: #0a6cff; background: #fff; font-size: 42rpx; font-weight: 760; line-height: 112rpx; text-align: center; box-shadow: 0 12rpx 32rpx rgba(24, 31, 27, .06); }
+.profile-copy { min-width: 0; }
+.profile-kicker { color: #6c726e; font-size: 18rpx; font-weight: 650; letter-spacing: 1rpx; }
+.profile-name { margin-top: 5rpx; overflow: hidden; color: #171918; font-size: 40rpx; font-weight: 760; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.profile-meta { margin-top: 7rpx; color: #6c726e; font-size: 20rpx; }
+.settings-notice { margin-bottom: 18rpx; }
+.settings-section-label { margin: 34rpx 4rpx 12rpx; color: #6c726e; font-size: 19rpx; font-weight: 650; letter-spacing: 1rpx; }
+.settings-group { overflow: hidden; border: 1rpx solid #d9deda; border-radius: 26rpx; background: #fff; }
+.profile-editor { padding: 24rpx; }
+.settings-field-label { margin-bottom: 10rpx; color: #6c726e; font-size: 19rpx; }
+.profile-input-row { display: grid; grid-template-columns: minmax(0, 1fr) 88rpx; align-items: center; gap: 14rpx; }
+.profile-input { box-sizing: border-box; width: 100%; height: 82rpx; padding: 0 20rpx; border: 1rpx solid #d1d7d2; border-radius: 17rpx; color: #171918; background: #f8f9f8; font-size: 25rpx; line-height: 82rpx; }
+.profile-save { min-height: 82rpx; border-radius: 17rpx; color: #fff; background: #0a6cff; font-size: 21rpx; font-weight: 680; line-height: 82rpx; text-align: center; }
+.settings-footnote { margin-top: 14rpx; color: #7a817c; font-size: 17rpx; line-height: 1.55; }
+.settings-row { display: grid; grid-template-columns: 50rpx minmax(0, 1fr) auto 22rpx; align-items: center; min-height: 100rpx; gap: 14rpx; padding: 13rpx 20rpx; }
+.settings-row + .settings-row { border-top: 1rpx solid #eaedea; }
+.settings-row:active { background: #f7f8f7; }
+.static-row:active { background: #fff; }
+.row-copy { min-width: 0; }
+.row-copy view { overflow: hidden; color: #171918; font-size: 23rpx; font-weight: 690; text-overflow: ellipsis; white-space: nowrap; }
+.row-copy text { display: block; margin-top: 4rpx; overflow-wrap: anywhere; color: #6c726e; font-size: 17rpx; line-height: 1.4; }
+.row-value, .row-status { color: #6c726e; font-size: 18rpx; white-space: nowrap; }
+.row-status { padding: 6rpx 10rpx; border-radius: 999rpx; color: #24734a; background: #eaf7ef; font-weight: 650; }
+.row-chevron { color: #a0a6a1; font-size: 34rpx; font-weight: 300; }
+.row-symbol { position: relative; width: 46rpx; height: 46rpx; border-radius: 13rpx; background: #f0f3f0; }
+.project-symbol view { position: absolute; top: 12rpx; left: 11rpx; width: 24rpx; height: 22rpx; border: 2rpx solid #56615a; border-top: 0; }
+.project-symbol::before { position: absolute; top: 9rpx; left: 12rpx; width: 20rpx; height: 20rpx; border-top: 2rpx solid #56615a; border-left: 2rpx solid #56615a; content: ""; transform: rotate(45deg); }
+.member-symbol view { position: absolute; width: 12rpx; height: 12rpx; border: 2rpx solid #56615a; border-radius: 50%; }
+.member-symbol view:first-child { top: 9rpx; left: 9rpx; }
+.member-symbol view:last-child { top: 13rpx; right: 8rpx; }
+.member-symbol::before, .member-symbol::after { position: absolute; bottom: 8rpx; width: 18rpx; height: 10rpx; border: 2rpx solid #56615a; border-radius: 12rpx 12rpx 4rpx 4rpx; content: ""; }
+.member-symbol::before { left: 6rpx; }
+.member-symbol::after { right: 5rpx; }
+.attention-symbol view { position: absolute; top: 9rpx; left: 12rpx; width: 20rpx; height: 23rpx; border: 2rpx solid #56615a; border-radius: 12rpx 12rpx 7rpx 7rpx; }
+.attention-symbol::after { position: absolute; bottom: 7rpx; left: 21rpx; width: 5rpx; height: 5rpx; border-radius: 50%; background: #56615a; content: ""; }
+.privacy-symbol view { position: absolute; top: 9rpx; left: 12rpx; width: 20rpx; height: 24rpx; border: 2rpx solid #56615a; border-radius: 5rpx 5rpx 12rpx 12rpx; }
+.privacy-symbol::before { position: absolute; top: 4rpx; left: 16rpx; width: 12rpx; height: 14rpx; border: 2rpx solid #56615a; border-bottom: 0; border-radius: 10rpx 10rpx 0 0; content: ""; }
+.backup-symbol view { position: absolute; top: 10rpx; left: 10rpx; width: 22rpx; height: 24rpx; border: 2rpx solid #56615a; border-radius: 4rpx; }
+.backup-symbol::before { position: absolute; top: 5rpx; left: 16rpx; width: 12rpx; height: 18rpx; border-top: 2rpx solid #56615a; border-left: 2rpx solid #56615a; content: ""; transform: rotate(45deg); }
+.service-stage { overflow: hidden; border: 1rpx solid #cdd8d0; border-radius: 26rpx; background: #fff; }
+.service-heading { display: grid; grid-template-columns: 64rpx minmax(0, 1fr) auto; align-items: center; gap: 16rpx; padding: 24rpx 22rpx 18rpx; }
+.service-orbit { position: relative; width: 58rpx; height: 58rpx; }
+.orbit-core { position: absolute; top: 22rpx; left: 22rpx; width: 14rpx; height: 14rpx; border-radius: 50%; background: #0a6cff; }
+.orbit-ring { position: absolute; inset: 5rpx; border: 2rpx solid #7db0ff; border-radius: 50%; }
+.orbit-ring::after { position: absolute; top: -4rpx; right: 6rpx; width: 8rpx; height: 8rpx; border-radius: 50%; background: #0a6cff; content: ""; }
+.service-copy { min-width: 0; }
+.service-copy view { color: #171918; font-size: 25rpx; font-weight: 720; }
+.service-copy text { display: -webkit-box; margin-top: 4rpx; overflow: hidden; color: #6c726e; font-size: 17rpx; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.service-state { display: flex; align-items: center; gap: 6rpx; color: #9a5a00; font-size: 16rpx; font-weight: 650; }
+.service-state view { width: 10rpx; height: 10rpx; border-radius: 50%; background: #c06b00; }
+.service-state.ready { color: #24734a; }
+.service-state.ready view { background: #24734a; }
+.service-boundary { margin: 0 22rpx; padding: 17rpx 18rpx; border-radius: 16rpx; color: #475149; background: #f4f6f4; font-size: 18rpx; line-height: 1.55; }
+.service-actions { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10rpx; padding: 18rpx 22rpx 23rpx; }
+.service-primary, .service-secondary { min-height: 72rpx; border-radius: 18rpx; font-size: 19rpx; font-weight: 680; line-height: 72rpx; text-align: center; }
+.service-primary { color: #fff; background: #0a6cff; }
+.service-secondary { border: 1rpx solid #d5dad6; color: #2e3530; background: #fff; }
+.connection-panel { padding: 24rpx 22rpx; border-top: 1rpx solid #e4e8e4; background: #fafbfa; }
+.connection-warning { margin-bottom: 23rpx; padding: 16rpx; border-left: 5rpx solid #9a5a00; color: #645342; background: #fff7e8; font-size: 17rpx; line-height: 1.55; }
+.connection-input { margin-bottom: 20rpx; background: #fff; }
+.connection-save { width: 100%; margin: 4rpx 0 0; }
+.settings-footer { padding: 42rpx 0 6rpx; color: #969c98; font-size: 17rpx; text-align: center; }
+@media (max-width: 360px) {
+  .settings-nav { grid-template-columns: 110rpx minmax(0, 1fr) 110rpx; }
+  .profile-stage { padding-top: 24rpx; }
+  .service-heading { grid-template-columns: 56rpx minmax(0, 1fr); }
+  .service-state { grid-column: 2; }
+  .service-actions { grid-template-columns: 1fr; }
+}

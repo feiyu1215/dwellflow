@@ -1,0 +1,33 @@
+{
+  "pages": [
+    "pages/dashboard/index",
+    "pages/spaces/index",
+    "pages/evidence/index",
+    "pages/evidence-viewer/index",
+    "pages/quick-record/index",
+    "pages/records/index",
+    "pages/issues/index",
+    "pages/ledger/index",
+    "pages/material/index",
+    "pages/collaboration/index",
+    "pages/backup/index",
+    "pages/consultation/index",
+    "pages/knowledge/index",
+    "pages/camera/index",
+    "pages/analysis/index",
+    "pages/ai/index",
+    "pages/project/index",
+    "pages/settings/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "装修同步",
+    "navigationBarBackgroundColor": "#F5F5F7",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F5F5F7"
+  },
+  "usingComponents": {
+    "ai-assistant": "/components/ai-assistant/index"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

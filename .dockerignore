@@ -1,0 +1,8 @@
+node_modules
+miniprogram_npm
+data
+.env*
+.git
+coverage
+tests
+xhs_note

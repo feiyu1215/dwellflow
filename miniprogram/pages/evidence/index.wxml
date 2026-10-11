@@ -1,0 +1,29 @@
+<view class="page evidence-page">
+  <view wx:if="{{!projectId}}" class="card no-project"><view class="empty-title">还没有当前项目</view><view class="meta">先创建或选择一个装修项目。</view></view>
+  <block wx:else>
+    <view class="evidence-topbar"><view class="back-link" bindtap="goBack">‹ 项目</view><view class="topbar-title">证据资料</view><view class="topbar-space"></view></view>
+    <view class="evidence-heading"><view class="eyebrow">{{projectName}} · Evidence assets</view><view class="title">证据资料</view><view class="subtitle">原件独立存在，再关联到记录、问题和材料。文件一致不代表工程结论真实。</view></view>
+    <view wx:if="{{readonly}}" class="readonly-banner">项目已归档，只能查看证据状态。</view>
+    <view class="backup-notice"><view class="notice-mark">i</view><view>本地原件依赖当前设备；完成跨设备恢复验证前，不应把普通导出视为完整证据备份。</view></view>
+
+    <view class="evidence-summary"><view><text>{{readyCount}}</text><text>原件可用</text></view><view class="{{warningCount ? 'has-warning' : ''}}"><text>{{warningCount}}</text><text>需要处理</text></view><view><text>{{legacyCandidates.length}}</text><text>待登记</text></view></view>
+    <view wx:if="{{!readonly}}" class="import-actions"><button class="primary" loading="{{busy}}" disabled="{{busy}}" bindtap="addPhotos">添加照片</button><button class="secondary" disabled="{{busy}}" bindtap="addFiles">添加文件</button></view>
+
+    <view class="section-head"><view><view class="section-title">已登记证据</view><view class="section-kicker">原件状态与业务关联分别保存</view></view></view>
+    <view wx:if="{{!assets.length}}" class="card empty"><view class="empty-title">还没有一等证据</view><view>添加照片或文件，系统会自动登记完整性信息。</view></view>
+    <view class="card evidence-card" wx:for="{{assets}}" wx:key="id" data-id="{{item.id}}" bindtap="openViewer">
+      <view class="evidence-glyph {{item.category}}"><view></view></view>
+      <view class="evidence-copy"><view class="evidence-name">{{item.fileName}}</view><view class="meta">{{item.categoryLabel}} · {{item.receivedLabel}}</view><view class="evidence-foot">{{item.linkCount}} 个关联 · SHA-256 {{item.hashLabel}}…</view></view>
+      <view class="evidence-tail"><view class="status-pill {{item.tone}}">{{item.statusLabel}}</view><view class="row-arrow">›</view></view>
+      <view class="card-actions"><view wx:if="{{!readonly}}" class="action-link" data-id="{{item.id}}" catchtap="recheck">重新校验</view><view wx:if="{{!readonly && item.status === 'ready'}}" class="action-link" data-id="{{item.id}}" data-version="{{item.version}}" data-hidden="true" catchtap="toggleHidden">隐藏</view></view>
+    </view>
+
+    <block wx:if="{{legacyCandidates.length}}"><view class="section-head"><view><view class="section-title">旧记录附件</view><view class="section-kicker">一键登记，不复制原件字节</view></view></view>
+      <view class="card legacy-card" wx:for="{{legacyCandidates}}" wx:key="candidateKey"><view class="row"><view class="evidence-copy"><view class="evidence-name">{{item.attachment.name}}</view><view class="meta">来自：{{item.sourceTitle}}</view></view><view class="pill pill-amber">待登记</view></view><button wx:if="{{!readonly}}" class="secondary legacy-button" data-attachment-id="{{item.attachment.id}}" disabled="{{busy}}" bindtap="registerLegacy">登记为证据</button></view>
+    </block>
+
+    <block wx:if="{{hiddenAssets.length}}"><view class="section-head"><view><view class="section-title">已隐藏</view><view class="section-kicker">隐藏不会删除原件或历史关联</view></view></view>
+      <view class="card hidden-row" wx:for="{{hiddenAssets}}" wx:key="id"><view class="row"><view><view class="evidence-name">{{item.fileName}}</view><view class="meta">{{item.sizeLabel}} · {{item.linkCount}} 个关联</view></view><view wx:if="{{!readonly}}" class="action-link" data-id="{{item.id}}" data-version="{{item.version}}" data-hidden="false" bindtap="toggleHidden">恢复</view></view></view>
+    </block>
+  </block>
+</view>

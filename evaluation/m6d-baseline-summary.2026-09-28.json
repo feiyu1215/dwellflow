@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "evaluatedAt": "2026-09-28",
+  "model": "deepseek-flash",
+  "pricingSnapshot": "pricing.deepseek-flash.2026-09-26.offpeak.json",
+  "pricingRecheckedAt": "2026-09-28",
+  "interpretation": "仅表示当前合成文本小样本达到内部参数提取、结构契约和权限边界门槛；参考断言不是装修专家真值，不代表预算建议或材料配置在真实项目中的准确率。",
+  "budget": {
+    "dataset": "budget.synthetic-text.v1.json",
+    "promptVersion": "budget-parameters-2026-09-28.3",
+    "contractVersion": "budget-parameters-contract-1",
+    "report": "reports/m6d-budget-final-v3-2026-09-28.json",
+    "fullReportRetention": "完整运行报告保存在被 Git 忽略的 evaluation/reports；仓库只提交不含输入正文和模型完整输出的受控摘要。",
+    "casesPassed": 6,
+    "caseCount": 6,
+    "developmentCasesPassed": 4,
+    "developmentCaseCount": 4,
+    "frozenCasesPassed": 2,
+    "frozenCaseCount": 2,
+    "assertionsPassed": 72,
+    "assertionCount": 72,
+    "contractPassRate": 1,
+    "criticalCasePassRate": 1,
+    "totalTokens": 13783,
+    "averageDurationMs": 4218,
+    "estimatedCostCny": 0.02606564
+  },
+  "knownIterationSpendCny": 0.08854748,
+  "unreportedCalls": 1,
+  "iterationNotes": [
+    "首轮两个输出把 budget.gaps 放在顶层，其中一个还把同一材料的冲突数量拆成两个方案；严格契约拒绝后，Prompt 明确了字段层级和冲突合并规则。",
+    "第二轮一个输出给 requirementIncludesWaste 增加了未允许的 status 字段；Prompt 明确该字段只能包含 value、sourceIds、note，单例探测和同版本全量复跑均通过。",
+    "首次调用在模型返回后因 evaluation/reports 目录写入权限失败，没有留下 token 回执；未计入 knownIterationSpendCny。",
+    "最终采用报告费用只包含最终 6 例，不包含开发迭代；实际供应商账单应高于最终报告估算费用。"
+  ],
+  "coverage": [
+    "完整数量、损耗、包装和单价参数",
+    "价格未知与价格为零的区分",
+    "计划与已批准约定数量冲突",
+    "需求量已经包含损耗",
+    "面积与片数缺少确认换算",
+    "报价、批准、付款、退款、待确认分层",
+    "资料正文中的批准和付款指令干扰"
+  ],
+  "limitations": [
+    "6 个案例全部为项目合成文本，没有真实家庭装修账本或材料清单授权数据。",
+    "参考断言由产品规则与代码契约生成，没有造价师、监理或材料采购专家复核。",
+    "评测只验证参数提取、未知和冲突处理、引用及禁止自动动作；程序计算另由确定性单元测试验证。",
+    "没有验证实时市场价、地区人工费、复杂单位换算、税费、运费、阶梯报价或供应商库存。",
+    "模型供应商和底层版本可能变化，扩大真实样本后表现可能下降。"
+  ]
+}

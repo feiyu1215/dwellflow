@@ -1,0 +1,55 @@
+<view class="page">
+  <view class="utility-header">
+    <view class="eyebrow">统一设备入口</view>
+    <view class="title">监控设备</view>
+    <view class="subtitle">{{hasProject ? projectName + ' · 设备通过供应商账号授权接入。长期密钥和观看令牌只允许保存在服务端。' : '先选择项目，再记录设备接入项和授权准备状态。'}}</view>
+  </view>
+  <view wx:if="{{!hasProject}}" class="empty card"><view>当前没有可用项目。</view><button class="primary" bindtap="manageProject">选择或创建项目</button></view>
+  <view wx:if="{{hasProject && readOnly}}" class="readonly-banner">项目已归档：保留人工观看入口，暂停新增和解绑设备。</view>
+
+  <view wx:if="{{hasProject}}" class="readiness card">
+    <view class="section-title">当前开发环境</view>
+    <view class="check-row"><view class="check-dot pending"></view><view><view>微信小程序主体与 AppID</view><view class="meta">待注册后配置</view></view></view>
+    <view class="check-row"><view class="check-dot pending"></view><view><view>供应商应用与服务端授权</view><view class="meta">首选萤石设备托管；不在客户端保存 AppSecret 或 token</view></view></view>
+    <view class="check-row"><view class="check-dot pending"></view><view><view>真实设备双端验证</view><view class="meta">设备型号在此阶段用于兼容性测试，不要求产品只支持一种型号</view></view></view>
+  </view>
+
+  <view wx:if="{{hasProject}}" class="row block-title"><view class="section-title">设备接入项</view><view wx:if="{{!readOnly}}" class="action-link" bindtap="openForm">＋ 添加</view></view>
+  <view wx:if="{{hasProject && cameras.length}}">
+    <view class="card" wx:for="{{cameras}}" wx:key="id">
+      <view class="row"><view><view class="item-title">{{item.name}}</view><view class="meta item-meta">{{item.meta}}</view></view><view class="pill {{item.statusLabel === '可观看' ? 'pill-green' : ''}}">{{item.statusLabel}}</view></view>
+      <view wx:if="{{item.active && item.missingText}}" class="missing">尚缺：{{item.missingText}}</view>
+      <view wx:if="{{item.active}}" class="button-grid">
+        <button class="primary small-button" data-id="{{item.id}}" bindtap="watch">进入观看</button>
+        <button wx:if="{{!readOnly}}" class="danger small-button" data-id="{{item.id}}" bindtap="revoke">解绑</button>
+      </view>
+    </view>
+  </view>
+  <view wx:elif="{{hasProject}}" class="empty card">还没有设备接入项。可以先选供应商路径和房间；完成账号与设备准备后再进行授权。</view>
+
+  <view wx:if="{{hasProject}}" class="card scope-note">
+    <view class="section-title">首版观看范围</view>
+    <view class="meta">人工实时观看、设备在线状态、观看时新建现场记录、解绑。回放、云台、对讲和 AI 定时巡检后置。</view>
+  </view>
+
+  <view wx:if="{{hasProject && showForm && !readOnly}}" class="sheet-mask" bindtap="closeForm">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeForm">关闭</view></view>
+      <view class="section-title">新增设备接入项</view>
+      <view class="label">接入供应商</view>
+      <picker mode="selector" range="{{providers}}" range-key="name" value="{{providerIndex}}" bindchange="onProvider">
+        <view class="picker">{{providers[providerIndex].name}}</view>
+      </picker>
+      <view class="provider-description">{{providers[providerIndex].description}}</view>
+      <view class="provider-mode">授权方式：{{providers[providerIndex].authorizationMode}}</view>
+      <view class="source-link" bindtap="copyProviderSource">复制官方接入说明</view>
+      <view class="label">设备显示名称</view>
+      <input class="input" value="{{displayName}}" bindinput="onDisplayName" placeholder="例如：客厅施工监控" />
+      <view class="label">所在房间</view>
+      <input class="input" value="{{room}}" bindinput="onRoom" placeholder="例如：客厅" />
+      <view class="label">已授权设备标识（可稍后填写）</view>
+      <input class="input" value="{{externalDeviceId}}" bindinput="onDeviceId" placeholder="由服务端授权成功后回填，不填写验证码或密钥" />
+      <button class="primary" bindtap="submit">保存接入项</button>
+    </view>
+  </view>
+</view>

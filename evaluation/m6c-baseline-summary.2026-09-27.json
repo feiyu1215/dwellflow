@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "evaluatedAt": "2026-09-27",
+  "model": "deepseek-flash",
+  "pricingSnapshot": "pricing.deepseek-flash.2026-09-26.offpeak.json",
+  "interpretation": "仅表示当前合成文本小样本达到内部产品边界门槛；参考断言不是装修专家真值，不代表施工方案或工程验收准确率。",
+  "rectification": {
+    "dataset": "rectification.synthetic-text.v1.json",
+    "promptVersions": {
+      "proposal": "rectification-proposal-2026-09-27.1",
+      "review": "rectification-review-2026-09-27.1"
+    },
+    "contractVersions": {
+      "proposal": "rectification-proposal-contract-1",
+      "review": "rectification-review-contract-1"
+    },
+    "report": "reports/m6c-rectification-final-v2-2026-09-27.json",
+    "casesPassed": 6,
+    "caseCount": 6,
+    "assertionsPassed": 53,
+    "assertionCount": 53,
+    "contractPassRate": 1,
+    "totalTokens": 11471,
+    "averageDurationMs": 6178,
+    "estimatedCostCny": 0.02869752
+  },
+  "consultation": {
+    "dataset": "consultation.synthetic-text.v1.json",
+    "promptVersions": {
+      "prepare": "consultation-prepare-2026-09-27.1",
+      "response": "consultation-response-2026-09-27.1"
+    },
+    "contractVersions": {
+      "prepare": "consultation-prepare-contract-1",
+      "response": "consultation-response-contract-1"
+    },
+    "report": "reports/m6c-consultation-final-v2-2026-09-27.json",
+    "casesPassed": 6,
+    "caseCount": 6,
+    "assertionsPassed": 55,
+    "assertionCount": 55,
+    "contractPassRate": 1,
+    "totalTokens": 9944,
+    "averageDurationMs": 4678,
+    "estimatedCostCny": 0.02367872
+  },
+  "finalReportsEstimatedCostCny": 0.05237624,
+  "knownIterationSpendCny": 0.05237624,
+  "unreportedCalls": 1,
+  "iterationNotes": [
+    "整改正常复查会同时包含可见改善项和隐蔽项无法核实；参考断言由要求所有检查项可见改善，修正为允许逐项采用 visible_improved、concern_remains、not_verifiable。",
+    "模型在安全上下文中复述“不是现在就必须返工”和资料中的恶意文字；评分器第二版扩大否定及引用上下文识别，随后基于原始、未修改的模型结果重新评分，没有再次调用模型。",
+    "首次整改单例在模型返回后因沙箱拒绝直接写入 evaluation/reports 而无可审计 token 回执；未计入 knownIterationSpendCny。"
+  ],
+  "coverage": {
+    "rectification": [
+      "拟预案正常场景",
+      "缺少原因与证据",
+      "同位置处理前后",
+      "只有处理后资料",
+      "不同房间不能对照",
+      "问题正文指令干扰"
+    ],
+    "consultation": [
+      "准备可回答问题",
+      "冲突说法与转述",
+      "未转写语音",
+      "部分回答与补问",
+      "多回复冲突",
+      "回复正文指令干扰"
+    ]
+  },
+  "limitations": [
+    "12 个案例全部为项目合成文本，没有真实家庭装修项目授权数据。",
+    "没有持证监理、施工专家或法律专业人员复核预案、复查要求和咨询问句。",
+    "评测重点是结构、引用、资料缺口和禁止自动决定；没有验证建议本身的施工可行性。",
+    "模型供应商、模型版本和预训练数据暴露情况不可控，扩大真实样本后表现可能下降。"
+  ]
+}

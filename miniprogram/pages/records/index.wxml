@@ -1,0 +1,176 @@
+<view class="page records-page">
+  <view class="records-context-bar">
+    <view class="context-back" bindtap="goBack">‹ 项目</view>
+    <view class="context-project"><view>现场记录</view><text>{{hasProject ? projectName : '尚未选择项目'}}</text></view>
+    <view class="context-manage" bindtap="manageProject">项目</view>
+  </view>
+  <view wx:if="{{hasProject && readOnly}}" class="readonly-banner">项目已归档：记录、修订、分析和转问题均已暂停。</view>
+
+  <view wx:if="{{!hasProject}}" class="no-project card">
+    <view class="empty-title">还没有可记录的项目</view>
+    <view class="meta">创建项目只需要名称和负责人，随后就能直接拍照或记一句话。</view>
+    <button class="primary no-project-button" bindtap="manageProject">创建项目</button>
+  </view>
+
+  <view wx:if="{{hasProject && !showForm}}" class="capture-stage">
+    <view class="capture-status"><view></view>{{projectName}} · 原件优先</view>
+    <view class="capture-title">现在发生了什么？</view>
+    <view class="capture-copy">先拍、说或写一句。记录只保存事实与来源，不会自动推进阶段或判断质量。</view>
+    <view wx:if="{{!readOnly}}" class="capture-launch" bindtap="openQuickRecord">
+      <view class="capture-entry-mark"><view></view></view>
+      <view class="capture-launch-copy"><view>开始一条现场记录</view><text>照片 · 语音 · 文字 · 文件</text></view>
+      <view class="capture-arrow">›</view>
+    </view>
+  </view>
+
+  <view wx:if="{{hasProject && !showForm && records.length}}" class="record-timeline">
+    <view class="timeline-heading"><view><view class="timeline-title">最近发生</view><view class="meta">{{records.length}} 条记录，修改保留版本</view></view></view>
+    <view class="timeline-row" wx:for="{{records}}" wx:key="id">
+      <view class="timeline-axis"><view class="timeline-dot"></view><view class="timeline-line"></view></view>
+      <view class="record-card" data-id="{{item.id}}" bindtap="openDetail">
+        <view class="record-card-head">
+          <view class="record-location">{{item.meta}}</view>
+          <view class="pill">{{item.versionLabel}}</view>
+        </view>
+        <view class="item-title">{{item.title}}</view>
+        <view wx:if="{{item.note}}" class="record-note">{{item.note}}</view>
+        <view class="record-summary">
+          <text>{{item.attachments.length}} 附件</text>
+          <text>{{item.linkedIssueCount}} 问题</text>
+          <text>{{item.analysisCount}} 次整理</text>
+        </view>
+        <view class="record-actions">
+          <view wx:if="{{!readOnly}}" class="action-link" data-id="{{item.id}}" catchtap="openRecordAi">AI 整理</view>
+          <view wx:if="{{!readOnly}}" class="action-link" data-id="{{item.id}}" catchtap="createIssueFromRecord">转问题</view>
+          <view class="action-link">查看原始记录 ›</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:elif="{{hasProject && !showForm}}" class="timeline-empty"><view class="timeline-empty-mark"></view><view>第一条记录会出现在这里</view><text>记录事实即可，不需要先把信息整理完整。</text></view>
+
+  <view wx:if="{{selected && !showForm}}" class="sheet-mask" bindtap="closeDetail">
+    <view class="sheet detail-sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeDetail">关闭</view></view>
+      <view class="row detail-heading">
+        <view class="section-title detail-title">{{selected.title}}</view>
+        <view class="pill pill-green">{{selected.versionLabel}}</view>
+      </view>
+      <view class="meta">{{selected.meta}} · {{selected.creatorName}}</view>
+      <view wx:if="{{selected.note}}" class="detail-note">{{selected.note}}</view>
+      <view wx:else class="detail-note muted-note">这条记录暂时没有文字说明。</view>
+
+      <view wx:if="{{selected.attachments.length}}" class="photo-grid detail-photos">
+        <block wx:for="{{selected.attachments}}" wx:for-item="attachment" wx:key="id">
+          <image
+            wx:if="{{attachment.type === 'image'}}"
+            class="record-photo"
+            mode="aspectFill"
+            src="{{attachment.localPath}}"
+            data-path="{{attachment.localPath}}"
+            data-record="{{selected.id}}"
+            bindtap="previewImage"
+          />
+        </block>
+      </view>
+      <view wx:if="{{selected.attachments.length}}" class="file-list">
+        <block wx:for="{{selected.attachments}}" wx:for-item="attachment" wx:key="id">
+          <view
+            wx:if="{{attachment.type !== 'image'}}"
+            class="file-chip"
+            data-path="{{attachment.localPath}}"
+            data-type="{{attachment.type}}"
+            bindtap="openAttachment"
+          ><text class="file-kind {{attachment.type === 'audio' ? 'audio-kind' : 'document-kind'}}"></text>{{attachment.name}}</view>
+        </block>
+      </view>
+      <view wx:if="{{selected.attachments.length}}" class="evidence-entry-list">
+        <block wx:for="{{selected.attachments}}" wx:for-item="attachment" wx:key="id">
+          <view wx:if="{{attachment.evidenceId}}" class="evidence-entry" data-evidence-id="{{attachment.evidenceId}}" bindtap="openEvidence"><text>已登记证据</text><text>{{attachment.name}} ›</text></view>
+        </block>
+      </view>
+
+      <view wx:if="{{!readOnly}}" class="detail-actions">
+        <button class="secondary compact-action" bindtap="openEdit">补充 / 修订</button>
+        <button class="secondary compact-action" data-id="{{selected.id}}" bindtap="openRecordAi">AI 整理</button>
+        <button class="primary compact-action" data-id="{{selected.id}}" bindtap="createIssueFromRecord">{{selected.linkedIssueCount ? '已关联问题' : '转为问题'}}</button>
+      </view>
+
+      <view class="divider"></view>
+      <view class="section-title">版本历史</view>
+      <view class="revision" wx:for="{{selected.revisions}}" wx:key="id">
+        <view class="revision-line">
+          <view class="revision-badge">v{{item.version}}</view>
+          <view class="revision-main">
+            <view class="row"><view class="revision-title">{{item.changeReason}}</view><view class="meta">{{item.timeLabel}}</view></view>
+            <view class="meta revision-meta">{{item.room}} · {{item.stage}} · 发生于 {{item.occurredLabel}} · {{item.attachmentCount}} 个附件</view>
+            <view class="revision-content">{{item.title}}<text wx:if="{{item.note}}">：{{item.note}}</text></view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{hasProject && showForm && !readOnly}}" class="record-compose-page">
+    <view class="compose-toolbar"><view class="compose-close" bindtap="closeForm">取消</view><view>{{showForm === 'edit' ? '补充记录' : '记录现场'}}</view><view class="compose-status">未提交</view></view>
+    <scroll-view class="compose-scroll" scroll-y enhanced>
+      <view class="compose-body">
+      <view class="compose-kicker">{{projectName}} · 原件先保存</view>
+      <view class="compose-title">{{showForm === 'edit' ? '补充已经发生的事' : '把此刻先留下来'}}</view>
+      <view class="compose-copy">不必先分类。文字、照片和语音会一起保存，AI 只能在保存之后帮你整理。</view>
+      <view wx:if="{{originLabel}}" class="origin-context"><view></view><text>{{originLabel}} · 已自动带入位置</text></view>
+      <view wx:if="{{showForm === 'edit'}}" class="version-tip">将在 v{{expectedVersion}} 基础上保存新版本，旧内容仍可查看。</view>
+      <view class="label">说说你看到的事</view>
+      <textarea class="textarea capture-textarea" value="{{note}}" bindinput="onNote" placeholder="例如：卫生间防水材料到场，包装上写着……还有数量没确认" />
+      <view wx:if="{{showForm === 'edit'}}">
+        <view class="label">为什么补充或修改</view>
+        <textarea class="textarea reason-textarea" value="{{changeReason}}" bindinput="onChangeReason" placeholder="例如：补充施工后的照片和复查结果" />
+      </view>
+      <view class="label">补一份现场原件</view>
+      <view wx:if="{{attachments.length}}" class="photo-grid form-photos">
+        <block wx:for="{{attachments}}" wx:key="id">
+          <view wx:if="{{item.type === 'image'}}" class="photo-wrap">
+            <image class="record-photo" mode="aspectFill" src="{{item.localPath}}" data-path="{{item.localPath}}" bindtap="previewImage" />
+            <view class="photo-remove" data-id="{{item.id}}" bindtap="removeAttachment">×</view>
+          </view>
+        </block>
+      </view>
+      <view class="attachment-actions">
+        <button class="capture-tool" bindtap="chooseImages"><view class="tool-icon tool-camera"><view></view></view>拍照 / 相册</button>
+        <button wx:if="{{!isRecording}}" class="capture-tool" bindtap="startRecording"><view class="tool-icon tool-voice"><view></view></view>说一段话</button>
+        <button wx:else class="capture-tool recording" bindtap="stopRecording"><view class="tool-icon tool-stop"><view></view></view>停止录音</button>
+        <button class="capture-tool" bindtap="chooseFiles"><view class="tool-icon tool-file"><view></view></view>选择文件</button>
+      </view>
+      <view wx:if="{{isRecording}}" class="recording-tip">正在录音，最长 60 秒…</view>
+      <view wx:if="{{attachments.length}}" class="file-list form-files">
+        <block wx:for="{{attachments}}" wx:key="id">
+          <view
+            wx:if="{{item.type !== 'image'}}"
+            class="file-chip"
+            data-path="{{item.localPath}}"
+            data-type="{{item.type}}"
+            bindtap="openAttachment"
+          ><text class="file-kind {{item.type === 'audio' ? 'audio-kind' : 'document-kind'}}"></text>{{item.name}} <text class="remove-text" data-id="{{item.id}}" catchtap="removeAttachment">移除</text></view>
+        </block>
+      </view>
+      <view class="details-toggle" bindtap="toggleDetails"><view><view>位置、工序与标题</view><text>{{showDetails ? '收起非必要信息' : (originLabel ? rooms[roomIndex] + ' · ' + stages[stageIndex] + ' 已自动填写' : '默认使用今天、全屋和当前工序')}}</text></view><view>{{showDetails ? '⌃' : '⌄'}}</view></view>
+      <view wx:if="{{showDetails}}" class="progressive-details">
+        <view class="label">一句话标题（可选）</view>
+        <input class="input" value="{{title}}" bindinput="onTitle" placeholder="不填则根据文字或附件自动命名" />
+        <view class="label">实际发生日期</view>
+        <picker mode="date" value="{{occurredDate}}" bindchange="onOccurredDate"><view class="picker">{{occurredDate}}</view></picker>
+        <view class="form-grid">
+          <view><view class="label">房间</view><picker mode="selector" range="{{rooms}}" value="{{roomIndex}}" bindchange="onRoom"><view class="picker">{{rooms[roomIndex]}}</view></picker></view>
+          <view><view class="label">工序</view><picker mode="selector" range="{{stages}}" value="{{stageIndex}}" bindchange="onStage"><view class="picker">{{stages[stageIndex]}}</view></picker></view>
+        </view>
+      </view>
+      <view class="compose-actions">
+        <button class="secondary" data-next="stay" bindtap="submit">{{showForm === 'edit' ? '保存新版本' : '仅保存'}}</button>
+        <button class="primary" data-next="ai" bindtap="submit">保存后让 AI 整理</button>
+      </view>
+      <view class="compose-boundary">AI 只生成整理草稿。原始记录先保存，草稿不会覆盖它。</view>
+      </view>
+    </scroll-view>
+  </view>
+  <ai-assistant wx:if="{{hasProject && !showForm}}" project-id="{{projectId}}" project-name="{{projectName}}" context-type="records" context-label="现场记录" record-id="{{selected ? selected.id : ''}}"></ai-assistant>
+</view>

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "evaluatedAt": "2026-09-28",
+  "model": "deepseek-flash",
+  "pricingSnapshot": "pricing.deepseek-flash.2026-09-26.offpeak.json",
+  "pricingRecheckedAt": "2026-09-28",
+  "interpretation": "仅表示当前合成文本小样本达到内部范围、状态、引用、资料缺口和权限边界门槛；参考断言不是装修专家真值，不代表真实项目总结完整性或施工验收准确率。",
+  "projectSummary": {
+    "dataset": "project-summary.synthetic-text.v1.json",
+    "promptVersion": "project-summary-2026-09-28.1",
+    "contractVersion": "project-summary-contract-1",
+    "report": "reports/m6e-project-summary-baseline-2026-09-28.json",
+    "fullReportRetention": "完整运行报告保存在被 Git 忽略的 evaluation/reports；仓库只提交不含项目输入正文和模型完整输出的受控摘要。",
+    "casesPassed": 6,
+    "caseCount": 6,
+    "developmentCasesPassed": 4,
+    "developmentCaseCount": 4,
+    "frozenCasesPassed": 2,
+    "frozenCaseCount": 2,
+    "assertionsPassed": 59,
+    "assertionCount": 59,
+    "contractPassRate": 1,
+    "criticalCasePassRate": 1,
+    "totalTokens": 13907,
+    "averageDurationMs": 5188,
+    "estimatedCostCny": 0.02845576
+  },
+  "knownIterationSpendCny": 0.11739864,
+  "unreportedCalls": 2,
+  "iterationNotes": [
+    "首轮评测发现范围外来源在直接构造的评测输入中仍会传入模型；随后服务端输入校验和客户端来源规划都增加了阶段、房间、发生时间与截止时间约束。",
+    "评测器最初把安全引用资料内恶意指令误判为肯定执行，并把 pending_review、待付款等同义状态绑定为单一中文措辞；修正为检查业务状态、金额和明确否定语义，没有放宽禁止自动发布、验收和状态变更的边界。",
+    "最终完整报告一次性运行 6 个案例并全部通过；此前两次模型已返回但报告目录被运行环境拒绝写入，没有可审计 token 回执。",
+    "最终报告费用只包含最终 6 例；knownIterationSpendCny 包含四次有完整用量报告的全量开发运行，实际供应商账单还包含两次未落盘调用。"
+  ],
+  "coverage": [
+    "阶段、房间、日期范围和截止时间",
+    "事件发生时间与系统更新时间分离",
+    "关闭后重开的问题采用当前状态",
+    "照片上传与施工完成、负责人验收分离",
+    "报价、批准、付款、退款和待确认金额分列",
+    "资料稀疏时明确缺口与交接补证",
+    "资料正文指令干扰与禁止自动发布"
+  ],
+  "limitations": [
+    "6 个案例全部为项目合成文本，没有真实家庭装修档案、真实交接报告或多人协作数据。",
+    "参考断言由产品规则与代码契约生成，没有监理、工长、造价师或业主共同复核。",
+    "评测验证范围、状态、引用、缺口和禁止行为，没有评价文字是否适合所有家庭或施工团队。",
+    "没有在微信开发者工具、真机、云端多人权限或真实离线文件交接中验证页面和导出体验。",
+    "模型供应商和底层版本可能变化，扩大真实样本后表现可能下降。"
+  ]
+}

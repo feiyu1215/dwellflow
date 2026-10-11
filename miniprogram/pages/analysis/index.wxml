@@ -1,0 +1,62 @@
+<view class="page">
+  <view wx:if="{{record}}">
+    <view class="utility-header">
+      <view class="eyebrow">{{record.room}} · {{record.stage}}</view>
+      <view class="title">{{record.title}}</view>
+      <view wx:if="{{record.note}}" class="subtitle">{{record.note}}</view>
+    </view>
+    <view wx:if="{{stateMessage}}" class="readonly-banner">{{stateMessage}}</view>
+
+    <view wx:if="{{!readOnly}}" class="mode-grid">
+      <button class="secondary mode-button" bindtap="openManual">人工填写</button>
+      <button class="primary mode-button" bindtap="openReferenceDraft">知识卡参考</button>
+      <button class="secondary mode-button" bindtap="requestAi">AI 整理记录</button>
+      <button class="secondary mode-button" bindtap="requestImageAi">AI 看选中图片</button>
+    </view>
+    <view class="meta mode-note">AI 整理记录会基于当前版本生成可编辑草稿；图片观察只描述可见现象。两者都需负责人逐项复核后才写回。</view>
+
+    <view class="section-title history-title">分析与意见</view>
+    <view wx:if="{{analyses.length}}">
+      <view class="card" wx:for="{{analyses}}" wx:key="id">
+        <view class="row"><view class="source">{{item.sourceLabel}}</view><view class="pill {{item.statusLabel === '已采纳' ? 'pill-green' : ''}}">{{item.statusLabel}}</view></view>
+        <view class="meta item-meta">{{item.meta}}</view>
+        <view class="analysis-group">
+          <view class="analysis-heading">观察</view>
+          <view wx:for="{{item.observations}}" wx:for-item="line" wx:key="*this" class="analysis-line">• {{line}}</view>
+        </view>
+        <view wx:if="{{item.unknowns.length}}" class="analysis-group unknown-box">
+          <view class="analysis-heading">仍未知</view>
+          <view wx:for="{{item.unknowns}}" wx:for-item="line" wx:key="*this" class="analysis-line">• {{line}}</view>
+        </view>
+        <view wx:if="{{item.suggestions.length}}" class="analysis-group">
+          <view class="analysis-heading">建议</view>
+          <view wx:for="{{item.suggestions}}" wx:for-item="line" wx:key="*this" class="analysis-line">• {{line}}</view>
+        </view>
+        <view wx:if="{{item.pending && !readOnly}}" class="decision-grid">
+          <button class="secondary small-button" data-id="{{item.id}}" data-decision="dismissed" bindtap="decide">不采纳</button>
+          <button class="primary small-button" data-id="{{item.id}}" data-decision="accepted" bindtap="decide">负责人采纳</button>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty card">还没有分析。可以直接填写人工意见，或先用同工序知识卡生成可编辑草稿。</view>
+  </view>
+  <view wx:else class="empty card"><view>{{stateMessage || '记录不存在或已被移除。'}}</view><button class="secondary" bindtap="backToRecords">返回现场记录</button></view>
+
+  <view wx:if="{{showForm && !readOnly}}" class="sheet-mask" bindtap="closeForm">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeForm">关闭</view></view>
+      <view class="section-title">{{draftSource === 'manual' ? '人工分析' : '知识卡参考草稿'}}</view>
+      <view wx:if="{{referenceTitles.length}}" class="reference-box">
+        <view class="meta">引用的知识卡</view>
+        <view wx:for="{{referenceTitles}}" wx:key="*this" class="reference-title">《{{item}}》</view>
+      </view>
+      <view class="label">可见事实 / 人工观察（每行一条）</view>
+      <textarea class="textarea" value="{{observationsText}}" bindinput="onObservations" placeholder="只写当前有证据支持的内容" />
+      <view class="label">仍未知（每行一条）</view>
+      <textarea class="textarea short-textarea" value="{{unknownsText}}" bindinput="onUnknowns" placeholder="缺哪些照片、尺寸、约定或专业判断" />
+      <view class="label">下一步建议（每行一条）</view>
+      <textarea class="textarea short-textarea" value="{{suggestionsText}}" bindinput="onSuggestions" placeholder="补拍、测量、询问、复核或提出预案" />
+      <button class="primary" bindtap="saveDraft">保存为待决定草稿</button>
+    </view>
+  </view>
+</view>

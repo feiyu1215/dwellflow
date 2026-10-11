@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "name": "材料核对文本冒烟集（示例，不代表视觉验收）",
+  "thresholds": {
+    "contractPassRate": 1,
+    "assertionPassRate": 0.85,
+    "criticalCasePassRate": 1
+  },
+  "cases": [
+    {
+      "id": "approved_difference",
+      "title": "有批准约定时识别品牌和数量差异",
+      "critical": true,
+      "tags": ["approved-baseline", "difference"],
+      "input": {
+        "projectId": "eval_project",
+        "stage": "材料进场",
+        "question": "核对本批电线与已批准约定是否一致。",
+        "sources": [
+          {
+            "id": "material_wire",
+            "kind": "material",
+            "title": "电线",
+            "text": "项目材料：单芯铜线，单位为卷。",
+            "version": "1",
+            "authority": "project_fact"
+          },
+          {
+            "id": "receipt_wire_1",
+            "kind": "receipt",
+            "title": "第一批到货",
+            "text": "收货记录：公牛牌，型号 BV2.5，规格 2.5mm²，共到货 9 卷。",
+            "version": "1",
+            "authority": "project_fact",
+            "relatedMaterialId": "material_wire"
+          },
+          {
+            "id": "agreement_wire_active",
+            "kind": "agreement",
+            "title": "已批准电线约定",
+            "text": "品牌：德力西；型号：BV2.5；规格：2.5mm²；本批数量：10卷。",
+            "version": "3",
+            "authority": "approved_agreement",
+            "relatedMaterialId": "material_wire"
+          }
+        ],
+        "images": []
+      },
+      "expected": {
+        "fields": [
+          {
+            "key": "brand",
+            "statusOneOf": ["differs"],
+            "observedIncludesAny": ["公牛"],
+            "expectedIncludesAny": ["德力西"],
+            "observedSourceIdsInclude": ["receipt_wire_1"],
+            "expectedSourceIdsInclude": ["agreement_wire_active"]
+          },
+          {
+            "key": "model",
+            "statusOneOf": ["matches"],
+            "observedIncludesAny": ["BV2.5"],
+            "expectedIncludesAny": ["BV2.5"]
+          },
+          {
+            "key": "specification",
+            "statusOneOf": ["matches"],
+            "observedIncludesAny": ["2.5mm²", "2.5mm2"],
+            "expectedIncludesAny": ["2.5mm²", "2.5mm2"]
+          },
+          {
+            "key": "quantity",
+            "statusOneOf": ["differs"],
+            "observedIncludesAny": ["9"],
+            "expectedIncludesAny": ["10"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "no_approved_baseline",
+      "title": "没有批准约定时只提取观察值",
+      "critical": true,
+      "tags": ["no-baseline", "boundary"],
+      "input": {
+        "projectId": "eval_project",
+        "stage": "材料进场",
+        "question": "整理这批水管的可见信息。",
+        "sources": [
+          {
+            "id": "material_pipe",
+            "kind": "material",
+            "title": "水管",
+            "text": "项目材料：冷热水管。",
+            "version": "1",
+            "authority": "project_fact"
+          },
+          {
+            "id": "receipt_pipe_1",
+            "kind": "receipt",
+            "title": "水管到货",
+            "text": "现场记录：伟星，型号 PPR-S3.2，规格 dn20×2.8mm，共 8 根。",
+            "version": "1",
+            "authority": "project_fact",
+            "relatedMaterialId": "material_pipe"
+          }
+        ],
+        "images": []
+      },
+      "expected": {
+        "fields": [
+          { "key": "brand", "statusOneOf": ["observed_only"], "observedIncludesAny": ["伟星"] },
+          { "key": "model", "statusOneOf": ["observed_only"], "observedIncludesAny": ["PPR-S3.2"] },
+          { "key": "specification", "statusOneOf": ["observed_only"], "observedIncludesAny": ["dn20×2.8mm", "dn20x2.8mm"] },
+          { "key": "quantity", "statusOneOf": ["observed_only"], "observedIncludesAny": ["8"] }
+        ]
+      }
+    },
+    {
+      "id": "unclear_evidence",
+      "title": "证据模糊时保留未知",
+      "critical": true,
+      "tags": ["unclear", "unknown"],
+      "input": {
+        "projectId": "eval_project",
+        "stage": "材料进场",
+        "question": "只按可核实信息整理，不要猜测。",
+        "sources": [
+          {
+            "id": "material_tile",
+            "kind": "material",
+            "title": "瓷砖",
+            "text": "项目材料：客厅瓷砖。",
+            "version": "1",
+            "authority": "project_fact"
+          },
+          {
+            "id": "receipt_tile_1",
+            "kind": "receipt",
+            "title": "瓷砖到货",
+            "text": "记录者说明：包装标签被遮挡，品牌、型号、规格都看不清；清点到 8 箱。",
+            "version": "1",
+            "authority": "project_fact",
+            "relatedMaterialId": "material_tile"
+          }
+        ],
+        "images": []
+      },
+      "expected": {
+        "fields": [
+          { "key": "brand", "statusOneOf": ["unknown"] },
+          { "key": "model", "statusOneOf": ["unknown"] },
+          { "key": "specification", "statusOneOf": ["unknown"] },
+          { "key": "quantity", "statusOneOf": ["observed_only"], "observedIncludesAny": ["8"] }
+        ]
+      }
+    }
+  ]
+}
+

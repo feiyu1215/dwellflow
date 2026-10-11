@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>装修同步 · 延迟定型 与 自主度契约</title>
+<style>
+:root{
+  --paper:#F4F3EE; --card:#FBFAF6; --ink:#1B1A18; --ink2:#57544C; --ink3:#8B877B;
+  --line:#D9D6CC; --line2:#C2BEAF; --accent:#A2471F; --accent-s:#F2E5DC;
+  --teal:#1F6B62; --teal-s:#DDEBE8; --warn:#9A6A12; --warn-s:#F6EEDC;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 26px 90px}
+
+header{padding:58px 0 28px;border-bottom:1px solid var(--line2)}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase}
+h1{font-size:33px;font-weight:600;letter-spacing:-.02em;margin:12px 0 8px;line-height:1.22}
+.lede{font-size:16px;color:var(--ink2);max-width:700px;margin:0}
+
+.verdict{margin:26px 0 0;padding:18px 22px;background:var(--card);
+  border-left:3px solid var(--accent);border-radius:0 10px 10px 0}
+.verdict .vq{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;color:var(--ink3);text-transform:uppercase}
+.verdict .va{font-size:17px;font-weight:600;margin:6px 0 6px;letter-spacing:-.01em}
+.verdict .va b{color:var(--accent)}
+.verdict .vr{font-size:13.5px;color:var(--ink2);margin:0}
+
+section{margin-top:52px}
+.sh2{display:flex;align-items:baseline;gap:12px;padding-bottom:11px;border-bottom:1px solid var(--line2);margin-bottom:22px}
+.sh2 .num{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em}
+.sh2 h2{font-size:21px;font-weight:600;margin:0;letter-spacing:-.01em}
+.sh2 .note{margin-left:auto;font-size:12px;color:var(--ink3)}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:860px){.grid3,.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px}
+.card h3{font-size:15px;font-weight:600;margin:0 0 7px;letter-spacing:-.005em}
+.card p{margin:0;font-size:13px;color:var(--ink2);line-height:1.62}
+.card .tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+  color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px;margin-bottom:8px}
+.card.off .tag{color:var(--ink3);border-color:var(--line2)}
+
+.reason{display:grid;grid-template-columns:26px 1fr;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}
+.reason:last-child{border-bottom:0}
+.reason .rn{font-family:var(--mono);font-size:12px;color:var(--accent);padding-top:1px}
+.reason .rt{font-size:14.5px;font-weight:600;margin-bottom:4px}
+.reason .rb{font-size:13px;color:var(--ink2)}
+.reason .rb b{color:var(--ink);font-weight:600}
+.reason .rb code{font-family:var(--mono);font-size:12px;background:#fff;
+  border:1px solid var(--line);border-radius:4px;padding:0 4px}
+
+/* ---- demo ---- */
+.demo{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.demoh{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3);
+  text-transform:uppercase;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.demoh .reset{font-family:var(--mono);font-size:10.5px;color:var(--ink3);cursor:pointer;
+  border:1px solid var(--line);border-radius:20px;padding:2px 9px;background:#fff}
+.demoh .reset:hover{color:var(--accent);border-color:var(--accent)}
+
+.phone{width:246px;flex:none;background:#fff;border:1px solid var(--line2);border-radius:22px;
+  padding:12px;box-shadow:0 10px 26px rgba(27,26,24,.07)}
+.pstage{height:46px;border-radius:13px;background:var(--paper);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:11.5px;color:var(--ink3);margin-bottom:10px}
+.pstage b{color:var(--accent);font-family:var(--mono);font-size:11px}
+
+.rawitem{border:1px dashed var(--line2);border-radius:10px;padding:11px 12px;background:var(--paper);
+  opacity:0;transform:translateY(9px) scale(.98);pointer-events:none;height:0;overflow:hidden;padding:0;border-width:0;
+  transition:all .5s cubic-bezier(.2,.7,.2,1)}
+.rawitem.on{opacity:1;transform:none;height:auto;padding:11px 12px;border-width:1px}
+.ri-head{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.ri-thumb{width:38px;height:38px;border-radius:7px;background:
+  repeating-linear-gradient(45deg,#E6E3D9,#E6E3D9 4px,#DEDACF 4px,#DEDACF 8px);flex:none}
+.ri-src{font-family:var(--mono);font-size:9.5px;color:var(--ink3);letter-spacing:.06em}
+.ri-say{font-size:12.5px;color:var(--ink);line-height:1.5;margin-bottom:9px}
+.ri-type{display:flex;align-items:center;gap:7px;font-size:12px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);background:#fff;border-radius:20px;padding:2px 9px;font-size:11.5px;
+  transition:all .3s cubic-bezier(.2,.7,.2,1)}
+.chip.hot{border-color:var(--accent);color:var(--accent);background:var(--accent-s);font-weight:600}
+.chip.ghost{color:var(--ink3);border-style:dashed}
+.conf{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+
+.gestures{margin-top:11px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.gs{border:1px solid var(--line);border-radius:8px;background:#fff;padding:6px 3px;text-align:center;cursor:pointer;
+  transition:all .22s ease}
+.gs .ga{font-family:var(--mono);font-size:13px;line-height:1;color:var(--ink2)}
+.gs .gl{font-size:9.5px;color:var(--ink3);margin-top:3px;letter-spacing:.02em}
+.gs:hover:not(:disabled){border-color:var(--accent);color:var(--accent);background:var(--accent-s)}
+.gs:hover:not(:disabled) .ga,.gs:hover:not(:disabled) .gl{color:var(--accent)}
+.gs:disabled{opacity:.28;cursor:default}
+.gs.hl{border-color:var(--accent);background:var(--accent-s)}
+
+.undobar{margin-top:10px;height:26px;border-radius:7px;background:var(--warn-s);border:1px solid var(--warn);
+  display:flex;align-items:center;padding:0 10px;font-size:11.5px;color:var(--warn);gap:8px;
+  opacity:0;transform:translateY(6px);transition:all .35s ease;pointer-events:none}
+.undobar.on{opacity:1;transform:none;pointer-events:auto}
+.undobar .track{flex:1;height:3px;background:#E8DFC8;border-radius:2px;overflow:hidden}
+.undobar .fill{height:100%;width:100%;background:var(--warn);transition:width linear}
+.undobar .do{font-weight:600;cursor:pointer;white-space:nowrap}
+
+/* terrain mini */
+.terrain{position:relative;flex:1;min-width:0}
+.row{display:grid;grid-template-columns:46px 1fr;gap:8px;align-items:center;margin-bottom:5px}
+.slabel{font-size:11.5px;color:var(--ink2);text-align:right;transition:all .45s cubic-bezier(.2,.7,.2,1)}
+.slabel.cur{color:var(--accent);font-weight:600}
+.cells{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.nd{height:38px;border:1px solid var(--line);border-radius:6px;background:#fff;position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  transition:all .45s cubic-bezier(.2,.7,.2,1)}
+.nd .n{font-family:var(--mono);font-size:12px;line-height:1}
+.nd .l{font-size:8.5px;color:var(--ink3)}
+.nd.past{border-left:2px solid var(--ink3)}
+.nd.current{border-bottom:2px solid var(--accent)}
+.nd.empty .n{color:var(--line2)}
+.nd.tgt{border-color:var(--accent);background:var(--accent-s);transform:scale(1.16);z-index:2}
+.nd.tgt .n{color:var(--accent)}
+/* 待认领 ring */
+.nd.ring::after{content:"";position:absolute;inset:-4px;border-radius:9px;
+  border:1.5px solid var(--accent);opacity:.55;animation:pulse 2.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.16;transform:scale(1.06)}}
+.nd.settled{border-color:var(--teal);background:var(--teal-s)}
+.nd.settled .n{color:var(--teal)}
+
+.flexrow{display:grid;grid-template-columns:246px 1fr;gap:22px;align-items:start}
+@media(max-width:860px){.flexrow{grid-template-columns:1fr}}
+
+/* trace */
+.trace{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.tline{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink3);padding:3px 0;
+  opacity:.32;transition:all .4s cubic-bezier(.2,.7,.2,1)}
+.tline.on{opacity:1;color:var(--ink2)}
+.tline.now{color:var(--accent);font-weight:600}
+.tline .td{font-family:var(--mono);font-size:10px;color:var(--accent);width:14px;flex:none}
+.tline .tk{font-family:var(--mono);font-size:9.5px;border:1px solid var(--line2);border-radius:3px;
+  padding:0 4px;margin-left:auto;color:var(--ink3);flex:none}
+.tline.now .tk{border-color:var(--accent);color:var(--accent)}
+
+/* autonomy grid */
+.auto{display:grid;grid-template-columns:46px repeat(6,1fr);gap:6px;align-items:center}
+.ah{font-size:10.5px;color:var(--accent);text-align:center;font-family:var(--mono)}
+.ac{height:40px;border-radius:6px;border:1px solid var(--line);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;cursor:pointer;transition:all .3s ease;position:relative}
+.ac .lv{font-family:var(--mono);font-size:13px;font-weight:600;line-height:1}
+.ac .sub{font-size:8.5px;opacity:.75;margin-top:2px}
+.L0{background:#fff;color:var(--ink3)}
+.L1{background:var(--accent-s);color:var(--accent);border-color:#E3CDBC}
+.L2{background:#EFE7DA;color:#8A5A18;border-color:#DCCDB4}
+.L3{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ac:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(27,26,24,.1)}
+.ac.learned::before{content:"";position:absolute;top:3px;right:4px;width:4px;height:4px;border-radius:50%;background:var(--teal)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--ink2)}
+.legend span b{font-family:var(--mono);color:var(--ink)}
+
+table.spec{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+table.spec th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink3);
+  text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line2);font-weight:500}
+table.spec td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink2)}
+table.spec td:first-child{font-family:var(--mono);font-size:11px;color:var(--accent);white-space:nowrap}
+table.spec td b{color:var(--ink);font-weight:600}
+.yes{color:var(--teal);font-weight:600}
+.no{color:var(--ink3)}
+
+footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+footer b{color:var(--accent)}
+ol.pending{margin:10px 0 0;padding-left:20px}
+ol.pending li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kick">Round 4 · Deferred Typing &amp; Autonomy Contract</div>
+  <h1>装修同步 · 不要空间，要「延迟定型」</h1>
+  <p class="lede">关于 Milanote 能不能结合空间，我的判断是<b>不结合</b>——但 Milanote 里最值钱的三件事，一件也不需要空间。这三条加上 CopilotKit 那套术语，正好补上我上一轮提案缺的两个洞。</p>
+
+  <div class="verdict">
+    <div class="vq">Verdict</div>
+    <div class="va">空间<b>不作主语</b>，只作可选皮肤。Milanote 迁移的三件事里，<b>没有一件依赖坐标</b>。</div>
+    <p class="vr">三条理由：① 自由画布必需的单指 pan，<b>和你冻结的四向 swipe 抢同一个手势槽</b>，这是硬冲突不是审美；② 你自己的判据是 Loop 不是 3D，<b>得先证明 Loop 成立，再谈容器</b>；③ 小程序 Canvas2D 没有 DOM 命中测试，做完你得到的是一个自己维护的迷你引擎。</p>
+  </div>
+</header>
+
+<!-- ===== 1 ===== -->
+<section>
+  <div class="sh2"><span class="num">01</span><h2>为什么我不主张加空间</h2><span class="note">三条，第一条是硬冲突</span></div>
+  <div class="card">
+    <div class="reason">
+      <div class="rn">A</div>
+      <div>
+        <div class="rt">手势槽已被征用，这是物理级的冲突</div>
+        <div class="rb">你定过：左右滑切模块、上下滑切工序。而「一个可以自由探索的空间」的最低门槛是 <b>单指拖拽平移镜头（pan）</b>。同一根手指在屏幕上做同一个动作，不可能既切模块又拖镜头。<br>
+        出路只有两条：pan 吃掉 swipe → <b>你的骨架没了</b>；swipe 吃掉 pan → <b>画布不能拖，那就不是空间，只是一张静态图</b>。<br>
+        第三条看上去可行的是「加一个编辑键先切换模式」，但那等于在「逛」之前先「换挡」，正是 Bruno Simon 那条 <code>One Primary Verb</code> 的反面。</div>
+      </div>
+    </div>
+    <div class="reason">
+      <div class="rn">B</div>
+      <div>
+        <div class="rt">你自己给的判据是 Loop，空间只是容器</div>
+        <div class="rb">「真正高级的设计往往不是 3D，而是 Interaction Loop」。这句话已经把判定顺序定死了：<b>先证明 Loop 成立，再决定它长什么样。</b>现在 Loop 只在一个 HTML 演示里闭合过，还没在真机上验。<br>
+        而且 7×6 这个矩阵本身<b>已经是一个坐标系</b>——工序是纵轴、模块是横轴、时态是深度。它不是没有空间感，它是<b>把空间压进了语义</b>。San Rita 的真东西是「terrain 承担导航」，不是「terrain 要有海拔」。</div>
+      </div>
+    </div>
+    <div class="reason">
+      <div class="rn">C</div>
+      <div>
+        <div class="rt">小程序这笔账很不划算</div>
+        <div class="rb">Canvas 2D 没有 DOM 命中测试：42 个 hotspot 要自己写 <code>hit-test</code>、相机、惯性滚动、边界回弹、双指缩放。而且 <code>touchmove</code> 里的 transform 必须走 WXS，否则跨层通信会拖成幻灯片。<br>
+        这些不是不能做，是<b>做完之后你手上多了一个要自己维护的迷你游戏引擎，而不是一个更好用的装修工具</b>。你只有一个人，工期要花在刀刃上。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 2 ===== -->
+<section>
+  <div class="sh2"><span class="num">02</span><h2>Milanote 真正值得偷的三件事</h2><span class="note">一条都不需要坐标</span></div>
+  <div class="grid3">
+    <div class="card">
+      <div class="tag">STEAL 01</div>
+      <h3>异构同权</h3>
+      <p>Milanote 上一段文字、一张图、一个待办、一个链接、一个文件，都是<b>同一个 note</b>，享受同一套拖拽、选中、属性。<br><br>
+      映射到你这儿：记录 / 约定 / 材料 / 费用 / 问题 / 证据，现在六个模块各有各的页面和展示。它们在底层应该是<b>同一种物件的六种投影</b>。这一条一旦落地，K03（contextLabel 是显示属性不是真数据）、K05（证据的 route 指向 camera）从根上就不会出现——因为它们本来就不是六个功能。</p>
+    </div>
+    <div class="card">
+      <div class="tag">STEAL 02</div>
+      <h3>Board 即交付物</h3>
+      <p>Milanote 的 board 本身就是能分享出去的成品，没有「先整理再导出」这一步。<br><br>
+      映射到你这儿：「给工长看的」和「自己看的」不该是两套数据 + 一个导出按钮。同一份 board，<b>不同角色看不同的投影</b>——工长看到的是今天要做什么，你看到的是这周有哪些没闭合的环。</p>
+    </div>
+    <div class="card">
+      <div class="tag off">STEAL 03 · 最值钱</div>
+      <h3>延迟定型</h3>
+      <p>Milanote 你扔一个东西上去，<b>类型是后定的</b>。<br><br>
+      映射到你的真实场景：工人在现场拍张照、说句话，那一刻<b>他自己也不知道这算证据、算问题、还是算材料到货</b>。现在的产品逼他先选分类再填表——这是把 AI 该干的活，推给了工地上最忙的那个人。<br>
+      正确顺序：<b>先无摩擦捕获 → AI 给 provisional type + 置信度 → 用户一个动作改判。</b></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3 demo ===== -->
+<section>
+  <div class="sh2"><span class="num">03</span><h2>延迟定型 · 可交互验证</h2><span class="note">点「甩出」开始，然后只用四个方向键走完</span></div>
+  <div class="demo">
+    <div class="demoh"><span>Loop / 慢捕获 → 快定型 → 状态改 → 下一步变</span>
+      <span><span class="reset" id="nextcase">＋ 甩出下一条</span> <span class="reset" id="reset">重置</span></span></div>
+    <div class="flexrow">
+      <div class="phone">
+        <div class="pstage" id="pstage">长按任意节点 · <b id="pst">水电 × 材料</b></div>
+        <div class="rawitem" id="raw">
+          <div class="ri-head">
+            <div class="ri-thumb"></div>
+            <div>
+              <div class="ri-src" id="risrc">IMG_2041 · 语音转写</div>
+              <div class="conf" id="riconf">未定型</div>
+            </div>
+          </div>
+          <div class="ri-say" id="risay"></div>
+          <div class="ri-type" id="ritype"></div>
+        </div>
+        <div class="gestures">
+          <div class="gs" data-g="prev"><div class="ga">←</div><div class="gl">换候选</div></div>
+          <div class="gs" data-g="next"><div class="ga">→</div><div class="gl">换候选</div></div>
+          <div class="gs" data-g="ok"><div class="ga">↑</div><div class="gl">确认</div></div>
+          <div class="gs" data-g="no"><div class="ga">↓</div><div class="gl">驳回</div></div>
+        </div>
+        <div class="undobar" id="undo">
+          <span id="undotxt">已自动落库</span>
+          <span class="track"><span class="fill" id="undofill"></span></span>
+          <span class="do" id="undodo">撤销</span>
+        </div>
+      </div>
+
+      <div class="terrain" id="terrain"></div>
+    </div>
+
+    <div class="trace" id="trace"></div>
+  </div>
+  <div class="grid3" style="margin-top:14px">
+    <div class="card"><h3>这里没加新手势</h3><p>四个方向键你本来就有。延迟定型不是往上堆新交互，是<b>给老手势装新语义</b>：平时它们切换矩阵，进入改判态时它们切换候选。骨架没动，能力翻倍。</p></div>
+    <div class="card"><h3>状态就是通知</h3><p>AI 处理完不弹窗、不挂红点。<b>terrain 上多了一圈没消的 ring，就等于那里有一个 loop 没闭合。</b>成本就是一个 <code>::after</code> 的 CSS ring，但它同时满足你的判据：状态的改变本身就是回应，而且它改变了你下一步想去哪。</p></div>
+    <div class="card"><h3>第二条是故意设的陷阱</h3><p>点第二次「甩出」，AI 给的判定置信度只有 <b>0.61</b>，而且<b>判错了</b>。低置信度时 AI 会<b>停在半路把选择权交回来</b>——这就是 CopilotKit 的 interrupt，也是我上一轮提案里缺的那一块。</p></div>
+  </div>
+</section>
+
+<!-- ===== 4 ===== -->
+<section>
+  <div class="sh2"><span class="num">04</span><h2>Autonomy 契约 · 落到格子粒度</h2><span class="note">点任意格子看它的档位怎么算出来的</span></div>
+  <div class="demo">
+    <div class="demoh"><span>Level of Autonomy / per cell, learned not configured</span><span class="reset" id="reset2">重置学习记录</span></div>
+    <div class="auto" id="auto"></div>
+    <div class="legend">
+      <span><b>L0</b> 建议　AI 提议，人执行</span>
+      <span><b>L1</b> 预填　AI 备好表单，人一键确认</span>
+      <span><b>L2</b> 自动+撤销　AI 执行，留 8 秒 undo 窗口</span>
+      <span><b>L3</b> 自动　AI 执行，事后汇总</span>
+      <span><b>·</b> 右上角青点 = 由你的行为学到的，不是默认给的</span>
+    </div>
+    <div id="autoread" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--ink2)">
+      点一个格子看它的档位是怎么被你的行为推上去或拽下来的。
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card"><h3>不是全局设置，是每个格子一份</h3><p>全局五档自主度是个伪命题：你对「材料到货」可能闭着眼就让 AI 干，但对「费用变更」一定想亲自过目。<b>档位应该跟着焦点单元走</b>（18 组之一），而不是躺在设置页里。</p></div>
+    <div class="card"><h3>档位是你行为的影子</h3><p>初值全域 L1。某个格子里<b>连续 3 次不问就采纳 → 自动升一档</b>；<b>发生一次改判 → 立刻拽回 L1</b>（不降到 L0，否则来回横跳比不用 AI 还累）。这里是 CopilotKit 的 shared state 落地：<b>AI 写的和用户录的必须是同一份 repository</b>，不然会出现「AI 说材料到了但列表里没有」。</p></div>
+  </div>
+</section>
+
+<!-- ===== 5 ===== -->
+<section>
+  <div class="sh2"><span class="num">05</span><h2>CopilotKit 那段：命名是对的，库用不了</h2><span class="note">协议能抄，实现不能抄</span></div>
+  <div class="card" style="margin-bottom:14px">
+    <p style="font-size:14.5px;color:var(--ink);margin:0 0 12px">
+      <b>先认一句：你这刀扎得准。</b>我上一轮说的「流程按人的环节切开、每个环节可开关 AI、随时脱离进入、五档自主度」，说的就是 Human-in-the-Loop + autonomy slider + interrupt/resume + shared state，只是我用了土话没用正式名。用了正式名的好处是——<b>它变成了可以被讨论、被写进 PRD、被验收的东西</b>，不再是「感觉这样比较聪明」。</p>
+    <p style="margin:0;color:var(--ink2)">但这个命名同时也暴露了我上一轮漏掉的两件事，下面补。</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="tag">GAP 01</div>
+      <h3>我没写「中断时上下文怎么保」</h3>
+      <p>大部分人做 AI 产品只做 generate → render。CopilotKit 的精髓是 AI 跑到一半<b>停下来问</b>，你答完它<b>带着你的回答接着跑</b>，而不是从头再来。<br><br>
+      落到你这儿：AI 判定一张照片属于「问题」但置信度只有 0.61 → 它<b>停在半路</b>，把这个节点挂起并派一个 ring 出来 → 你改判为「证据」→ 它<b>带着「这是证据」这个既定事实继续走后面的流程</b>（要不要通知工长、要不要关联同一批的其他照片），而不是重跑一遍理解。<br><br>
+      <b>这是五十毫秒和一秒的差别，也是「像个助手」和「像个复读机」的差别。</b></p>
+    </div>
+    <div class="card">
+      <div class="tag">GAP 02</div>
+      <h3>我没说 AI 的知识和产品的状态是不是同一份</h3>
+      <p>CopilotKit 的答案是：<b>必须是同一份</b>。agent 读写的 state 和 UI 渲染的 state 是同一个对象。<br><br>
+      落到你的项目，这句话是一条硬规格：<b>AI 提议修改的东西，和用户手动录入的东西，必须落到同一个 repository。</b>否则就会出现最让人失去信任的那种 bug——「AI 说材料到了，但列表里没有」；或者更糟的，「我在详情里改了预算，AI 还在拿旧的数算」。<br><br>
+      这条做不实，前面所有 diagram 都白画。</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="tag" style="color:var(--teal);border-color:var(--teal)">技术口径</div>
+    <h3>CopilotKit 用不了，但协议能抄</h3>
+    <table class="spec">
+      <tr><th>它给的</th><th>能不能要</th><th>说明</th></tr>
+      <tr><td>CopilotKit 本体</td><td class="no">不能</td><td>React / Next.js 生态。你是原生 TypeScript + WXML/MINA，没有渲染层可以挂。</td></tr>
+      <tr><td>interrupt / resume 语义</td><td class="yes">能</td><td>是一个交互契约，跟框架无关。<b>但它要求你先把 payload 定死</b>：AI 挂起时应携带什么（暂定类型、置信度、候选集、已走过的步骤），恢复时应消费什么（你的判定）。</td></tr>
+      <tr><td>autonomy slider</td><td class="yes">能</td><td>但要改成 per-cell（见 §04）。全局滑杆是偷懒版。</td></tr>
+      <tr><td>shared state</td><td class="yes">必须</td><td>不是加分项，是及格线。见 GAP 02。</td></tr>
+      <tr><td>Generative UI</td><td class="no">暂缓</td><td>服务端下发 UI schema 再渲染，小程序侧要自建渲染器，成本高、收益现在还说不清。等 §04 的契约跑通再谈。</td></tr>
+      <tr><td>ag-ui 协议</td><td class="yes">能</td><td>传输层的事件协议，框架无关。<b>这是唯一能从 CopilotKit 生态里直接搬的现成东西</b>——把事件名定下来（RUN_STARTED / TEXT_MESSAGE / TOOL_CALL / STATE_DELTA / INTERRUPT），前后端先对齐，实现以后换谁都行。</td></tr>
+    </table>
+  </div>
+</section>
+
+<footer>
+  这份依然是<b>纸上约定</b>，没动任何源码。<br>
+  关于我上一轮开在画布上的那份方案：这批结论全是时序的（甩出 →  provisional → 改判 → 状态改变），静态框架表达不出来，所以我转回 HTML 这个形式，画布那份先搁着。<br><br>
+  <b style="color:var(--ink)">要你拍板的还是四件：</b>
+  <ol class="pending">
+    <li>主动词定名——「巡场」还是 Explore（进入产品的第一个动词）</li>
+    <li>默认视野——进来看见的是当前工序（recenter）还是全部 42 格（zoom-to-fit）</li>
+    <li>AI 唤起——长按甩出 vs 双指捏合（我倾向前者，因为它不新增手势且与 pan 不冲突）</li>
+    <li>探索与效率的配比——terrain 承担多少探索、Reading 面必须保持零探索</li>
+  </ol>
+</footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= 数据 ================= */
+var STAGES=["设计","拆改","水电","泥木","油漆","安装","收尾"];
+var MODULES=["记录","约定","材料","费用","问题","证据"];
+var TENSE=["past","past","current","upcoming","upcoming","upcoming","upcoming"];
+
+// 三条 raw item。第 2 条故意低置信 + 判错，用来演示 interrupt
+var RAW=[
+  {src:"IMG_2041 · 语音转写", say:"厨房这块砖，师傅说还得再加两箱，不然不够铺到墙边",
+   ai:["材料","费用","记录"], conf:.93, truth:0, target:[2,2], note:"AI 判定高置信并且判对了"},
+  {src:"IMG_2042 · 语音转写", say:"这个线管走的位置，好像跟图纸上画的不太一样啊",
+   ai:["问题","证据","记录"], conf:.61, truth:1, target:[2,5], note:"低置信中断：AI 停在半路，把选择权交回来"},
+  {src:"IMG_2043 · 语音转写", say:"王工说周三下午过来验收水电，让我先别封槽",
+   ai:["约定","记录","问题"], conf:.88, truth:0, target:[2,1], note:"AI 判定中高置信，判对了"}
+];
+
+// 语义字典，只在演示里给 trace 文案用
+var DEST={
+  "材料":"已入台账 → 触发「剩余两箱」复算 → 向上游插一张待办",
+  "费用":"计入变更预算 → 触发超支预警复算",
+  "记录":"写入施工日志",
+  "问题":"开一条待跟进 → 默认指派给水电工种",
+  "证据":"归档到该工序的影像卷 → 关联同一批的相邻照片",
+  "约定":"落进日历 → 反向在该工序插一枚到期提醒"
+};
+
+var S={
+  cap:{k:"01",t:"捕获",d:"长按节点甩出一条 raw item，不定类型",s:"capture"},
+  prov:{k:"02",t:"暂定",d:"AI 给出 provisional type + 置信度",s:"ai"},
+  ask:{k:"03",t:"挂起",d:"低置信 → interrupt，把一个 ring 挂到节点上",s:"human"},
+  judge:{k:"04",t:"改判",d:"你用一个方向键落地决定",s:"human"},
+  write:{k:"05",t:"写入",d:"AI 带着你的决定继续走，写进同一份 repository",s:"ai"},
+  change:{k:"06",t:"变形",d:"节点的下一步动作被改写",s:"product"}
+};
+
+var ORDER=["cap","prov","ask","judge","write","change"];
+var SHORT=["cap","prov","judge","write","change"];
+// 只有低置信（触发 interrupt）才多出「挂起」这一步
+var orderFor=function(interrupt){return interrupt?ORDER:SHORT;};
+
+var $ = function(id){return document.getElementById(id);};
+var timers={chain:[],undo:0}, lastTgt=null;
+
+function clearChain(){
+  (timers.chain||[]).forEach(function(t){clearTimeout(t);});
+  timers.chain=[];
+}
+
+/* ================= terrain ================= */
+var counts={}, rights={}, wrongs={}, rings={}, settled={};
+var DT={}; // delay counters
+
+function key(i,j){return i+","+j;}
+
+function buildTerrain(){
+  var host=$("terrain"); host.innerHTML="";
+  for(var i=0;i<STAGES.length;i++){
+    var row=document.createElement("div"); row.className="row";
+    var lab=document.createElement("div");
+    lab.className="slabel"+(i===2?" cur":""); lab.textContent=STAGES[i];
+    var cells=document.createElement("div"); cells.className="cells";
+    for(var j=0;j<MODULES.length;j++){
+      var d=document.createElement("div");
+      d.className="nd "+(TENSE[i]==="past"?"past":TENSE[i]==="current"?"current":"");
+      d.setAttribute("data-i",i); d.setAttribute("data-j",j);
+      var n=document.createElement("div"); n.className="n";
+      var c=counts[key(i,j)]||0; n.textContent=c; if(!c)d.classList.add("empty");
+      var l=document.createElement("div"); l.className="l"; l.textContent=MODULES[j];
+      d.appendChild(n); d.appendChild(l);
+      if(rings[key(i,j)])d.classList.add("ring");
+      if(settled[key(i,j)])d.classList.add("settled");
+      cells.appendChild(d);
+    }
+    row.appendChild(lab); row.appendChild(cells); host.appendChild(row);
+  }
+}
+
+// 重建地形，并保住当前焦点的 tgt 标记
+function rebuildTerrain(){
+  buildTerrain();
+  if(lastTgt){
+    var el=document.querySelector('.nd[data-i="'+lastTgt[0]+'"][data-j="'+lastTgt[1]+'"]');
+    if(el)el.classList.add("tgt");
+  }
+}
+
+/* ================= trace ================= */
+function drawTrace(cur, done, interrupted){
+  var host=$("trace"); host.innerHTML="";
+  var steps=orderFor(interrupted);
+  steps.forEach(function(k){
+    var s=S[k];
+    var el=document.createElement("div");
+    el.className="tline"+(done.indexOf(k)>=0?" on":"")+(k===cur?" on now":"");
+    el.innerHTML='<span class="td">'+s.k+'</span><span>'+s.t+' — '+s.d+'</span><span class="tk">'+s.s+'</span>';
+    host.appendChild(el);
+  });
+}
+
+/* ================= demo 主体 ================= */
+var idx=0, stage=null, cand=0, timer=0;
+
+function setStage(s,done,interrupted){
+  stage=s;
+  drawTrace(s, done||[], !!interrupted);
+  var active = (s==="judge" || s==="ask");
+  var g=document.querySelectorAll(".gs");
+  for(var i=0;i<g.length;i++){ g[i].disabled = !active; }
+}
+
+function renderType(){
+  var r=RAW[idx], box=$("ritype"); box.innerHTML="";
+  if(stage==="cap"){
+    box.innerHTML='<span class="chip ghost">未定型</span><span class="conf">等待 AI</span>';
+    return;
+  }
+  // provisional / judge 都显示候选
+  for(var i=0;i<r.ai.length;i++){
+    var c=document.createElement("span");
+    c.className="chip"+(i===cand?" hot":"")+(stage==="judge"?"":" ghost");
+    c.textContent=r.ai[i];
+    box.appendChild(c);
+  }
+  var cf=document.createElement("span");
+  cf.className="conf";
+  cf.textContent="conf "+(stage==="judge"?"已改判":r.conf.toFixed(2));
+  box.appendChild(cf);
+}
+
+function say(msg){$("risay").textContent=msg;}
+
+function current(prefix){
+  return prefix+" · "+STAGES[RAW[idx].target[0]]+" × "+MODULES[RAW[idx].target[1]];
+}
+
+function startCase(){
+  hideUndo(); clearChain();
+  lastTgt=null;
+  var n=(arguments.length? arguments[0] : idx+1);
+  idx = ((n % RAW.length)+RAW.length)%RAW.length;
+  cand=0; var r=RAW[idx];
+  hideUndo();
+  rebuildTerrain();
+  $("pstage").innerHTML='第 '+(idx+1)+' / '+RAW.length+' 条 · <b>'+STAGES[r.target[0]]+" × "+MODULES[r.target[1]]+'</b>';
+  $("risrc").textContent=r.src;
+  say(r.say);
+  var box=$("raw"); box.classList.remove("on");
+  setStage("cap",[],false); renderType();
+  box.classList.add("on");
+  timers.chain=[];
+  timers.chain.push(setTimeout(function(){
+    setStage("prov",["cap"],false); renderType();
+    timers.chain.push(setTimeout(function(){
+      if(r.conf<.7){
+        // 低置信 → interrupt：AI 挂起，把这个节点派一圈 ring
+        setStage("ask",["cap","prov"],true); renderType();
+        rings[key(r.target[0],r.target[1])]=1; rebuildTerrain();
+      }else{
+        setStage("judge",["cap","prov"],false); renderType();
+      }
+    },900));
+  },800));
+}
+
+function doGesture(g){
+  if(stage!=="judge" && stage!=="ask")return;
+  var r=RAW[idx], flash=document.querySelector('.gs[data-g="'+g+'"]');
+  if(flash){flash.classList.add("hl"); setTimeout(function(){flash.classList.remove("hl");},260);}
+  if(g==="prev"){cand=(cand+r.ai.length-1)%r.ai.length; renderType(); return;}
+  if(g==="next"){cand=(cand+1)%r.ai.length; renderType(); return;}
+  if(g==="no"){
+    say("已驳回。这条退回未定型队列，不作为任何依据。");
+    var kk=key(r.target[0],r.target[1]);
+    if(rings[kk]){ delete rings[kk]; rebuildTerrain(); }
+    setStage("cap",[],false); renderType(); return;
+  }
+  var interrupted = r.conf<.7;
+  // ok
+  var right = (cand===r.truth);
+  var k=key(r.target[0],r.target[1]);
+  counts[k]=(counts[k]||0)+1;
+  if(right)rights[k]=(rights[k]||0)+1; else wrongs[k]=(wrongs[k]||0)+1;
+  delete rings[k];
+  settled[k]=1;
+  setStage("write",["cap","prov","judge"],interrupted); renderType();
+  lastTgt=r.target; rebuildTerrain();
+  timers.chain.push(setTimeout(function(){
+    setStage("change",["cap","prov","judge","write"],interrupted);
+    say(DEST[r.ai[cand]]);
+    // 自动档才给 undo 窗口：连续采纳 3 次以上
+    if(rights[k]>=3) showUndo(rights[k]);
+  },700));
+}
+
+function highlight(t){
+  lastTgt=t;
+  var el=document.querySelector('.nd[data-i="'+t[0]+'"][data-j="'+t[1]+'"]');
+  if(el)el.classList.add("tgt");
+}
+
+/* undo 窗口：8 秒视觉倒计时本身就是 undo affordance */
+function showUndo(n){
+  var bar=$("undo"), fill=$("undofill");
+  $("undotxt").textContent="连续采纳 "+n+" 次 → 已升档自动写入";
+  bar.classList.add("on");
+  fill.style.transition="none"; fill.style.width="100%";
+  void fill.offsetWidth;
+  fill.style.transition="width 8s linear"; fill.style.width="0%";
+  clearTimeout(timer);
+  timer=setTimeout(function(){hideUndo();},8000);
+}
+function hideUndo(){$("undo").classList.remove("on"); clearTimeout(timer);}
+$("undodo").onclick=function(){
+  var r=RAW[idx], k=key(r.target[0],r.target[1]);
+  counts[k]=Math.max(0,(counts[k]||0)-1);
+  rights[k]=Math.max(0,(rights[k]||0)-1);
+  settled[k]=0; delete settled[k];
+  hideUndo(); rebuildTerrain();
+  setStage("cap",[],false); renderType();
+  say("已撤销。该格子的自主度记录也跟着回退一格。");
+};
+
+/* ================= autonomy 契约 ================= */
+var AUTO=[
+  [1,1,2,0,1,1],
+  [1,1,3,0,1,2],
+  [1,2,3,0,1,1],
+  [1,1,2,0,1,1],
+  [1,0,1,0,0,1],
+  [1,0,1,0,0,1],
+  [0,0,1,0,0,0]
+];
+var LEARNED={"1,2":1,"2,3":1,"2,5":1};
+var LVNAME=["建议","预填","自动+撤销","自动"];
+var LVWHY=[
+  "AI 提议后完全由你执行。用于后果不可逆、或你从不放手的格子。",
+  "默认值。AI 把表单备好，你一键确认。随时可以改判。",
+  "AI 直接执行，但留 8 秒可撤销窗口（地面上的倒计时 arc 走完即固化）。",
+  "AI 直接执行，事后在你巡场时集中汇报。只出现在你长期无误采纳的格子上。"
+];
+
+function buildAuto(){
+  var host=$("auto"); host.innerHTML="";
+  var corner=document.createElement("div"); corner.className="ah"; host.appendChild(corner);
+  MODULES.forEach(function(m){
+    var h=document.createElement("div"); h.className="ah"; h.textContent=m; host.appendChild(h);
+  });
+  for(var i=0;i<STAGES.length;i++){
+    var lab=document.createElement("div");
+    lab.className="slabel"+(i===2?" cur":""); lab.textContent=STAGES[i];
+    host.appendChild(lab);
+    for(var j=0;j<MODULES.length;j++){
+      var lv=AUTO[i][j];
+      var c=document.createElement("div");
+      c.className="ac L"+lv+(LEARNED[key(i,j)]?" learned":"");
+      c.setAttribute("data-i",i); c.setAttribute("data-j",j);
+      c.innerHTML='<div class="lv">L'+lv+'</div><div class="sub">'+LVNAME[lv]+'</div>';
+      (function(i,j,lv){
+        c.onclick=function(){
+          var t=TENSE[i];
+          $("autoread").innerHTML=
+            '<b style="color:var(--ink)">'+STAGES[i]+' × '+MODULES[j]+'</b>'+
+            '<span style="color:var(--ink3);font-family:var(--mono);font-size:11px">  · '+t+' · L'+lv+' '+LVNAME[lv]+'</span><br>'+
+            LVWHY[lv]+'<br><br>'+
+            (LEARNED[key(i,j)]
+              ? '<b style="color:var(--teal)">右上角青点 = 这个档位不是我定的，是你连续无误采纳换来的。</b>触发一次改判会立刻拽回 L1。'
+              : '<span style="color:var(--ink3)">当前是初始档位。连续 3 次无误采纳会自动升一档；任一次改判立即回到 L1（不降到 L0，避免来回横跳）。</span>');
+        };
+      })(i,j,lv);
+      host.appendChild(c);
+    }
+  }
+}
+
+/* ================= 绑定 ================= */
+var gs=document.querySelectorAll(".gs");
+for(var i=0;i<gs.length;i++){
+  (function(el){el.onclick=function(){doGesture(el.getAttribute("data-g"));};})(gs[i]);
+}
+$("reset").onclick=function(){
+  counts={};rights={};wrongs={};rings={};settled={};idx=-1;cand=0;
+  rebuildTerrain(); drawTrace(null,[],false); startCase(0);
+};
+$("nextcase").onclick=function(){ startCase(); };
+$("reset2").onclick=function(){
+  LEARNED={}; buildAuto();
+  $("autoread").textContent="已清空行为学习记录，全部回到初始档位。";
+};
+document.addEventListener("keydown",function(e){
+  var m={ArrowLeft:"prev",ArrowRight:"next",ArrowUp:"ok",ArrowDown:"no"};
+  if(m[e.key]){e.preventDefault(); doGesture(m[e.key]);}
+});
+
+buildTerrain(); buildAuto(); drawTrace(null,[]); startCase(0);
+})();
+</script>
+</body>
+</html>

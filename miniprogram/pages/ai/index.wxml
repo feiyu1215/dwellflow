@@ -1,0 +1,409 @@
+<view class="page ai-page">
+  <view class="ai-context-bar">
+    <view class="context-back" bindtap="goBack">‹ 返回</view>
+    <view class="context-project"><view>AI 工作台</view><text>{{hasProject ? projectName : '尚未选择项目'}}</text></view>
+    <view class="context-manage" bindtap="manageProject">项目</view>
+  </view>
+  <view wx:if="{{!hasProject}}" class="ai-empty-state">
+    <view class="ai-empty-orbit"><view></view></view>
+    <view class="empty-title">先进入一个项目</view>
+    <view class="meta">AI 的资料、任务与复核结果必须留在明确的项目边界里。</view>
+    <button class="primary no-project-button" bindtap="manageProject">选择或创建项目</button>
+  </view>
+  <view wx:if="{{hasProject && readOnly}}" class="readonly-banner">项目已归档：历史任务与来源仍可查看，暂停新分析和结果决定。</view>
+  <view wx:if="{{hasProject && !readOnly}}" class="ai-lens">
+    <view class="ai-lens-head">
+      <view class="ai-orbit"><view class="ai-orbit-ring"></view><view class="ai-orbit-core"></view></view>
+      <view class="ai-lens-status"><view></view>当前项目内协助</view>
+    </view>
+    <view class="lens-title">先说你想核对什么</view>
+    <view class="lens-copy">先把意图变成一张可检查的任务卡，再由你决定资料范围和是否运行。</view>
+    <view class="context-ledger">
+      <view class="context-line"><text>读取</text><view>只读下一步明确勾选的项目资料</view></view>
+      <view class="context-line"><text>产出</text><view>带来源的草稿、差异与未知项</view></view>
+      <view class="context-line forbidden-line"><text>禁止</text><view>批准、付款、入库、关闭问题或替负责人决定</view></view>
+    </view>
+    <view class="intent-composer">
+      <textarea class="intent-input" value="{{intentText}}" bindinput="onIntentInput" maxlength="1200" placeholder="例如：帮我核对今天到货的瓷砖型号、数量和破损情况" />
+      <view class="composer-foot">
+        <text>现在不会调用模型</text>
+        <button class="composer-submit" bindtap="prepareIntent">形成任务卡</button>
+      </view>
+    </view>
+    <scroll-view class="intent-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="intent-track">
+        <view class="intent-chip" wx:for="{{intentSuggestions}}" wx:key="label" data-prompt="{{item.prompt}}" bindtap="useIntentSuggestion">{{item.label}}</view>
+      </view>
+    </scroll-view>
+    <view class="lens-actions">
+      <view class="manual-entry" bindtap="openTaskPanel">从七类固定任务中选择 <text>›</text></view>
+      <view class="lens-boundary">人工流程始终可用</view>
+    </view>
+  </view>
+  <view wx:if="{{hasProject && !readOnly && !serviceReady}}" class="service-note notice-warning">当前未连接开发服务。人工记录和知识卡功能不受影响；配置服务后才能提交 AI 任务。</view>
+  <view wx:if="{{hasProject && !readOnly && showTaskPanel}}" class="ai-task-stage ai-request-card">
+    <view class="task-card-heading"><view><view class="form-kicker">任务卡</view><view class="section-title">{{tasks[taskIndex].label}}</view></view><view wx:if="{{!fixedTask}}" class="task-card-close" bindtap="closeTaskPanel">收起</view></view>
+    <view class="workflow-strip">
+      <view class="workflow-step workflow-current"><text>1</text><view>选任务</view></view>
+      <view class="workflow-line"></view>
+      <view class="workflow-step"><text>2</text><view>选资料</view></view>
+      <view class="workflow-line"></view>
+      <view class="workflow-step"><text>3</text><view>生成草稿</view></view>
+      <view class="workflow-line"></view>
+      <view class="workflow-step"><text>4</text><view>人工复核</view></view>
+    </view>
+    <view class="form-kicker">01 · 选择任务</view>
+    <picker range="{{tasks}}" range-key="label" value="{{taskIndex}}" disabled="{{fixedTask}}" bindchange="selectTask"><view class="picker">{{tasks[taskIndex].label}}{{fixedTask ? ' · 固定任务' : ' ▾'}}</view></picker>
+    <view class="meta">{{tasks[taskIndex].hint}}</view>
+    <picker wx:if="{{modeOptions.length}}" range="{{modeOptions}}" range-key="label" value="{{modeIndex}}" disabled="{{fixedMode}}" bindchange="selectMode"><view class="picker mode-picker">{{modeOptions[modeIndex].label}}{{fixedMode ? ' · 固定场景' : ' ▾'}}</view></picker>
+    <view wx:if="{{modeOptions.length}}" class="meta">{{modeOptions[modeIndex].hint}}</view>
+    <view wx:if="{{entryWarning}}" class="error entry-warning">{{entryWarning}}</view>
+    <view wx:if="{{tasks[taskIndex].id === 'project_summary'}}" class="summary-scope-form">
+      <view class="section-title">先定义这份报告</view>
+      <view class="meta review-help">报告只覆盖以下范围和你勾选的资料。截止时间会在提交时自动固定，后续项目变化不会改写已保存版本。</view>
+      <view class="label">报告标题</view>
+      <input class="input" value="{{summaryTitle}}" maxlength="120" data-field="summaryTitle" bindinput="onSummaryHeader" />
+      <view class="label">用途</view>
+      <textarea class="textarea compact-textarea" value="{{summaryPurpose}}" maxlength="1000" data-field="summaryPurpose" bindinput="onSummaryHeader" placeholder="例如：本周复盘、交接给下一位工长" />
+      <view class="label">阅读对象</view>
+      <input class="input" value="{{summaryAudience}}" maxlength="200" data-field="summaryAudience" bindinput="onSummaryHeader" placeholder="例如：家人、工长、设计师" />
+      <view class="review-grid">
+        <view><view class="label">工序范围</view><picker range="{{summaryStageOptions}}" value="{{summaryStageIndex}}" bindchange="onSummaryStage"><view class="picker compact-picker">{{summaryStageOptions[summaryStageIndex]}} ▾</view></picker></view>
+        <view><view class="label">房间范围</view><picker range="{{summaryRoomOptions}}" value="{{summaryRoomIndex}}" bindchange="onSummaryRoom"><view class="picker compact-picker">{{summaryRoomOptions[summaryRoomIndex]}} ▾</view></picker></view>
+      </view>
+      <view class="date-range-toggle"><view><view class="label">限定发生日期</view><view class="meta">关闭时不按日期排除资料</view></view><switch checked="{{summaryUseDateRange}}" color="#176b5b" bindchange="onSummaryDateRange" /></view>
+      <view wx:if="{{summaryUseDateRange}}" class="review-grid">
+        <view><view class="label">开始</view><picker mode="date" value="{{summaryDateFrom}}" data-field="summaryDateFrom" bindchange="onSummaryDate"><view class="picker compact-picker">{{summaryDateFrom}} ▾</view></picker></view>
+        <view><view class="label">结束</view><picker mode="date" value="{{summaryDateTo}}" data-field="summaryDateTo" bindchange="onSummaryDate"><view class="picker compact-picker">{{summaryDateTo}} ▾</view></picker></view>
+      </view>
+    </view>
+    <view class="label">本次重点（可选）</view>
+    <textarea class="textarea compact-textarea" value="{{question}}" bindinput="onQuestion" maxlength="4000" placeholder="例如：重点核对型号和到货数量" />
+    <view class="form-kicker source-kicker">02 · 选择资料</view>
+    <view class="section-title source-title">本次资料范围</view>
+    <checkbox-group bindchange="selectSources">
+      <label class="source-choice" wx:for="{{choices}}" wx:key="id"><checkbox value="{{item.id}}" checked="{{item.selected}}" disabled="{{item.required}}" color="#176b5b" />{{item.title}} <text class="meta">· {{item.kindLabel}}{{item.required ? ' · 本次必选' : ''}}</text></label>
+    </checkbox-group>
+    <view wx:if="{{!choices.length}}" class="meta">先保存现场记录或材料，再来分析。</view>
+    <view wx:if="{{images.length}}" class="label">图片需单独勾选（先选所属记录；最多 4 张，每张 2MB）</view>
+    <checkbox-group bindchange="selectImages" class="images">
+      <label wx:for="{{images}}" wx:key="id"><image src="{{item.path}}" mode="aspectFill" /><checkbox value="{{item.id}}" checked="{{item.selected}}" color="#176b5b" /></label>
+    </checkbox-group>
+    <view class="scope"><view class="scope-number">{{selectedCount}} 份资料 · {{imageCount}} 张图片</view><view>只发送当前勾选内容；未选择的附件、监控和其他资料不会发送。</view></view>
+    <view class="form-kicker submit-kicker">03 · 生成可编辑草稿</view>
+    <button class="primary" loading="{{busy}}" disabled="{{busy || !selectedCount || !serviceReady || entryWarning}}" bindtap="submit">确认范围并分析</button>
+  </view>
+  <view wx:if="{{error}}" class="card error notice-danger">{{error}}</view>
+  <view wx:if="{{hasProject && selected}}" class="ai-result-stage result-card">
+    <view class="result-heading"><view><view class="form-kicker">04 · 人工复核与写回</view><view class="section-title result-title">分析结果</view></view><view class="result-status status-{{selected.status}} decision-{{selected.decision}}">{{selectedStatusLabel}}</view></view>
+    <view class="meta">{{selected.model}} · Prompt {{selected.promptVersion}} · Contract {{selected.contractVersion || '旧任务未记录'}}</view>
+    <view wx:if="{{selected.retryOfJobId}}" class="meta">按原资料重试自任务 {{selected.retryOfJobId}}</view>
+    <view wx:if="{{selected.metrics}}" class="meta">耗时 {{selected.metrics.durationMs}}ms<text wx:if="{{selected.metrics.usage}}"> · 输入 {{selected.metrics.usage.promptTokens}} tokens · 输出 {{selected.metrics.usage.completionTokens}} tokens</text></view>
+    <view wx:if="{{selected.error}}" class="error">{{selected.error}}</view>
+    <view wx:if="{{selected.status === 'running'}}" class="service-note notice-warning">任务已在服务端运行。取消会丢弃随后返回的模型结果并尽力中断请求，但供应商可能已经开始计费。</view>
+    <view wx:if="{{selected.status === 'running'}}" class="buttons"><button class="secondary" loading="{{cancelling}}" disabled="{{cancelling}}" bindtap="cancelCurrentJob">取消本次任务</button></view>
+    <view wx:if="{{!readOnly && (selected.status === 'failed' || selected.status === 'cancelled')}}" class="buttons"><button class="secondary" loading="{{busy}}" disabled="{{busy}}" bindtap="retrySelectedJob">按原资料重试</button></view>
+    <block wx:if="{{selected.result}}">
+      <view class="summary">{{selected.result.summary}}</view>
+      <block wx:if="{{selected.result.observations.length}}"><view class="label">观察</view><view wx:for="{{selected.result.observations}}" wx:key="index" class="finding">{{item.text}}<view class="meta">来源：{{item.sourceIds}}</view></view></block>
+      <block wx:if="{{selected.result.differences.length}}"><view class="label">差异</view><view wx:for="{{selected.result.differences}}" wx:key="index" class="finding">{{item.text}}<view class="meta">来源：{{item.sourceIds}}</view></view></block>
+      <block wx:if="{{selected.result.unknowns.length}}"><view class="label">未知项</view><view wx:for="{{selected.result.unknowns}}" wx:key="*this" class="finding">• {{item}}</view></block>
+      <block wx:if="{{selected.result.suggestions.length}}"><view class="label">下一步建议</view><view wx:for="{{selected.result.suggestions}}" wx:key="index" class="finding">{{item.text}}<view class="meta">来源：{{item.sourceIds}}</view></view></block>
+      <view wx:if="{{selected.result.materialCheck}}" class="material-review">
+        <view class="section-title">逐字段人工复核</view>
+        <view class="meta review-help">模型原结果会保留。这里修改的是人工复核版本；采纳后只写入核对记录，不会自动入库或退货。</view>
+        <view wx:for="{{materialReviewFields}}" wx:key="key" class="review-field">
+          <view class="row"><view class="item-title">{{item.label}}</view><view class="pill">{{item.statusLabel}}</view></view>
+          <view class="original-value">AI 原始：现场「{{item.originalObservedValue || '未识别'}}」· 期望「{{item.originalExpectedValue || '未提供'}}」· {{item.originalStatusLabel}}</view>
+          <view class="label">人工确认的现场值</view>
+          <input class="input" value="{{item.observedValue}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" data-field="observedValue" bindinput="onMaterialFieldValue" placeholder="无法确认时留空" />
+          <view class="label">人工确认的期望值</view>
+          <input class="input" value="{{item.expectedValue}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" data-field="expectedValue" bindinput="onMaterialFieldValue" placeholder="没有正式基线时留空" />
+          <view class="label">人工状态</view>
+          <picker range="{{materialStatusOptions}}" range-key="label" value="{{item.statusIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" bindchange="onMaterialStatus"><view class="picker compact-picker">{{item.statusLabel}} ▾</view></picker>
+          <view class="label">复核说明</view>
+          <textarea class="textarea compact-textarea" value="{{item.note}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="1000" data-index="{{index}}" data-field="note" bindinput="onMaterialFieldValue" placeholder="未知状态必须说明缺什么资料" />
+          <view class="meta source-line">模型观察来源：{{item.observedSourceIds.length ? item.observedSourceIds : '无'}} · 期望来源：{{item.expectedSourceIds.length ? item.expectedSourceIds : '无'}}</view>
+        </view>
+      </view>
+      <view wx:if="{{selected.result.recordReview}}" class="task-review">
+        <view class="section-title">记录整理 · 人工复核</view>
+        <view class="meta review-help">{{recordTargetLabel}}。模型只生成草稿；负责人采纳后才创建记录或形成新版本，原记录与模型原结果都会保留。</view>
+        <view class="label">记录标题</view>
+        <input class="input" value="{{recordDraftTitle}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="120" bindinput="onRecordTitle" placeholder="请输入复核后的标题" />
+        <view wx:if="{{recordFactLines.length}}" class="review-block">
+          <view class="label">可核实事实</view>
+          <checkbox-group data-field="facts" bindchange="onRecordIncluded">
+            <view wx:for="{{recordFactLines}}" wx:key="sourceIndex" class="record-line">
+              <label class="line-toggle"><checkbox value="{{item.sourceIndex}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留</label>
+              <textarea class="textarea compact-textarea" value="{{item.text}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1200" data-field="facts" data-index="{{item.sourceIndex}}" bindinput="onRecordLine" />
+              <view class="meta">{{item.evidence}} · 来源：{{item.sourceIds}}</view>
+            </view>
+          </checkbox-group>
+        </view>
+        <view wx:if="{{recordOpinionLines.length}}" class="review-block">
+          <view class="label">意见与转述</view>
+          <checkbox-group data-field="opinions" bindchange="onRecordIncluded">
+            <view wx:for="{{recordOpinionLines}}" wx:key="sourceIndex" class="record-line">
+              <label class="line-toggle"><checkbox value="{{item.sourceIndex}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留为意见</label>
+              <textarea class="textarea compact-textarea" value="{{item.text}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1200" data-field="opinions" data-index="{{item.sourceIndex}}" bindinput="onRecordLine" />
+              <view class="meta">{{item.evidence}} · 来源：{{item.sourceIds}}</view>
+            </view>
+          </checkbox-group>
+        </view>
+        <view wx:if="{{selected.result.recordReview.gaps.length}}" class="unknown-box">
+          <view class="label">模型指出的待补信息</view>
+          <view wx:for="{{selected.result.recordReview.gaps}}" wx:key="*this" class="finding">• {{item}}</view>
+        </view>
+        <view class="review-grid">
+          <view><view class="label">房间</view><picker range="{{rooms}}" value="{{recordRoomIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" bindchange="onRecordRoom"><view class="picker compact-picker">{{rooms[recordRoomIndex]}} ▾</view></picker></view>
+          <view><view class="label">工序</view><picker range="{{stages}}" value="{{recordStageIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" bindchange="onRecordStage"><view class="picker compact-picker">{{stages[recordStageIndex]}} ▾</view></picker></view>
+        </view>
+        <view class="label">发生日期</view>
+        <picker mode="date" value="{{recordOccurredDate}}" disabled="{{readOnly || selected.decision !== 'pending'}}" bindchange="onRecordDate"><view class="picker compact-picker">{{recordOccurredDate}} ▾</view></picker>
+        <view class="label">人工补充说明</view>
+        <textarea class="textarea compact-textarea" value="{{recordDraftNote}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="2000" bindinput="onRecordNote" placeholder="补充模型未提取、但你已确认的上下文" />
+      </view>
+      <view wx:if="{{selected.result.imageObservation}}" class="task-review">
+        <view class="section-title">图片观察 · 人工处置</view>
+        <view class="meta review-help">模型只能描述选中图片里的可见现象。每条观察需由负责人选择留档、忽略或转为待确认问题；不会自动判定工程质量。</view>
+        <view wx:if="{{reviewImages.length}}" class="review-image-grid">
+          <image wx:for="{{reviewImages}}" wx:key="id" src="{{item.path}}" mode="aspectFill" data-path="{{item.path}}" bindtap="previewReviewImage" />
+        </view>
+        <view wx:for="{{selected.result.imageObservation.images}}" wx:key="imageId" class="coverage-line">
+          <view>{{item.visibleScope}}</view>
+          <view class="meta">图片 {{item.imageId}} · 画面限制：{{item.qualityLimitations.length ? item.qualityLimitations : '未列出'}}</view>
+        </view>
+        <view wx:for="{{imageReviewItems}}" wx:key="itemId" class="observation-card">
+          <view class="row"><view class="item-title">{{item.object || '未命名观察对象'}}</view><view class="pill">{{item.priorityLabel}}优先级</view></view>
+          <view class="meta">图片 {{item.imageId}} · {{item.regionLabel}}</view>
+          <view class="original-value">AI 原始：{{item.originalObservation}} · 可能解释「{{item.originalExplanation || '未给出'}}」· {{item.originalPriorityLabel}}优先级</view>
+          <view class="label">人工处置</view>
+          <picker range="{{imageDispositionOptions}}" range-key="label" value="{{item.dispositionIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" bindchange="onImageDisposition"><view class="picker compact-picker">{{item.dispositionLabel}} ▾</view></picker>
+          <view class="label">可见现象</view>
+          <textarea class="textarea compact-textarea" value="{{item.observation}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="1200" data-index="{{index}}" data-field="observation" bindinput="onImageReviewField" />
+          <view class="label">待核实解释</view>
+          <textarea class="textarea compact-textarea" value="{{item.suspectedExplanation}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="1200" data-index="{{index}}" data-field="suspectedExplanation" bindinput="onImageReviewField" placeholder="不要把可能原因改成确定结论" />
+          <view class="label">画面限制（每行一条）</view>
+          <textarea class="textarea compact-textarea" value="{{item.limitationsText}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="1600" data-index="{{index}}" data-field="limitationsText" bindinput="onImageReviewField" />
+          <view class="label">补拍或核实建议（每行一条）</view>
+          <textarea class="textarea compact-textarea" value="{{item.captureSuggestionsText}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="1600" data-index="{{index}}" data-field="captureSuggestionsText" bindinput="onImageReviewField" />
+          <view class="review-grid">
+            <view><view class="label">人工优先级</view><picker range="{{imagePriorityOptions}}" range-key="label" value="{{item.priorityIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" bindchange="onImagePriority"><view class="picker compact-picker">{{item.priorityLabel}} ▾</view></picker></view>
+            <view><view class="label">优先级理由</view><input class="input" value="{{item.priorityReason}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="500" data-index="{{index}}" data-field="priorityReason" bindinput="onImageReviewField" /></view>
+          </view>
+          <view wx:if="{{item.disposition === 'issue'}}">
+            <view class="label">待确认问题标题</view>
+            <input class="input" value="{{item.issueTitle}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="120" data-index="{{index}}" data-field="issueTitle" bindinput="onImageReviewField" />
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{selected.result.rectification}}" class="task-review">
+        <view class="section-title">问题与整改 · 人工复核</view>
+        <view wx:if="{{selected.result.rectification.mode === 'proposal'}}" class="meta review-help">模型生成的是备选做法。勾选并采纳后只会加入问题的“待选预案”，不会成为执行方案，也不会改变问题状态。</view>
+        <view wx:else class="meta review-help">模型只能整理复查参考。采纳后不会形成正式复查结论，不会自动关闭或退回问题。</view>
+        <checkbox-group wx:if="{{rectificationProposalItems.length}}" data-field="proposals" bindchange="onRectificationIncluded">
+          <view wx:for="{{rectificationProposalItems}}" wx:key="optionId" class="observation-card">
+            <label class="line-toggle"><checkbox value="{{item.optionId}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留为待选预案</label>
+            <view class="original-value">{{item.originalSummary}}</view>
+            <view class="label">预案标题</view>
+            <input class="input" value="{{item.title}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="120" data-kind="proposal" data-index="{{index}}" data-field="title" bindinput="onRectificationField" />
+            <view class="label">预案内容</view>
+            <textarea class="textarea compact-textarea tall-textarea" value="{{item.content}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="4000" data-kind="proposal" data-index="{{index}}" data-field="content" bindinput="onRectificationField" />
+          </view>
+        </checkbox-group>
+        <checkbox-group wx:if="{{rectificationCheckItems.length}}" data-field="checks" bindchange="onRectificationIncluded">
+          <view wx:for="{{rectificationCheckItems}}" wx:key="checkId" class="observation-card">
+            <label class="line-toggle"><checkbox value="{{item.checkId}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />纳入复查参考</label>
+            <view class="original-value">{{item.originalSummary}}</view>
+            <view class="label">复查要求</view>
+            <textarea class="textarea compact-textarea" value="{{item.requirement}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1200" data-kind="check" data-index="{{index}}" data-field="requirement" bindinput="onRectificationField" />
+            <view class="label">人工状态</view>
+            <picker range="{{rectificationStatusOptions}}" range-key="label" value="{{item.statusIndex}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" data-index="{{index}}" bindchange="onRectificationStatus"><view class="picker compact-picker">{{item.statusLabel}} ▾</view></picker>
+            <view class="label">观察说明</view>
+            <textarea class="textarea compact-textarea" value="{{item.observation}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1600" data-kind="check" data-index="{{index}}" data-field="observation" bindinput="onRectificationField" />
+            <view class="label">资料限制（每行一条）</view>
+            <textarea class="textarea compact-textarea" value="{{item.limitationsText}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1600" data-kind="check" data-index="{{index}}" data-field="limitationsText" bindinput="onRectificationField" />
+            <view class="label">下一步（每行一条）</view>
+            <textarea class="textarea compact-textarea" value="{{item.nextStepsText}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1600" data-kind="check" data-index="{{index}}" data-field="nextStepsText" bindinput="onRectificationField" />
+          </view>
+        </checkbox-group>
+        <view wx:if="{{selected.result.rectification.gaps.length}}" class="unknown-box">
+          <view class="label">仍缺资料</view>
+          <view wx:for="{{selected.result.rectification.gaps}}" wx:key="*this" class="finding">• {{item}}</view>
+        </view>
+        <view class="label">人工复核说明</view>
+        <textarea class="textarea compact-textarea" value="{{rectificationNote}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="4000" bindinput="onRectificationNote" placeholder="补充选择原因或现场限制" />
+      </view>
+      <view wx:if="{{selected.result.consultation}}" class="task-review">
+        <view class="section-title">建议与咨询 · 人工复核</view>
+        <block wx:if="{{selected.result.consultation.mode === 'prepare'}}">
+          <view class="meta review-help">采纳后只创建未发布草稿。负责人仍需进入咨询页核对资料范围并手动发布；系统不会向任何人发送消息。</view>
+          <view class="label">咨询标题</view>
+          <input class="input" value="{{consultationDraftTitle}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="120" data-field="title" bindinput="onConsultationHeader" />
+          <view class="label">咨询目的</view>
+          <textarea class="textarea compact-textarea" value="{{consultationDraftPurpose}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="2000" data-field="purpose" bindinput="onConsultationHeader" />
+          <view wx:if="{{consultationFactLines.length}}" class="review-block">
+            <view class="label">已知事实</view>
+            <checkbox-group data-field="facts" bindchange="onConsultationIncluded">
+              <view wx:for="{{consultationFactLines}}" wx:key="sourceIndex" class="record-line">
+                <label class="line-toggle"><checkbox value="{{item.sourceIndex}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留</label>
+                <textarea class="textarea compact-textarea" value="{{item.text}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1200" data-field="facts" data-index="{{item.sourceIndex}}" bindinput="onConsultationLine" />
+                <view class="meta">来源：{{item.sourceIds}}</view>
+              </view>
+            </checkbox-group>
+          </view>
+          <view wx:if="{{consultationTimelineLines.length}}" class="review-block">
+            <view class="label">时间线</view>
+            <checkbox-group data-field="timeline" bindchange="onConsultationIncluded">
+              <view wx:for="{{consultationTimelineLines}}" wx:key="sourceIndex" class="record-line">
+                <label class="line-toggle"><checkbox value="{{item.sourceIndex}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留</label>
+                <textarea class="textarea compact-textarea" value="{{item.text}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1200" data-field="timeline" data-index="{{item.sourceIndex}}" bindinput="onConsultationLine" />
+                <view class="meta">来源：{{item.sourceIds}}</view>
+              </view>
+            </checkbox-group>
+          </view>
+          <view wx:if="{{consultationDisputeLines.length}}" class="review-block">
+            <view class="label">分歧与待确认说法</view>
+            <checkbox-group data-field="disputes" bindchange="onConsultationIncluded">
+              <view wx:for="{{consultationDisputeLines}}" wx:key="sourceIndex" class="record-line">
+                <label class="line-toggle"><checkbox value="{{item.sourceIndex}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留</label>
+                <textarea class="textarea compact-textarea" value="{{item.text}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1200" data-field="disputes" data-index="{{item.sourceIndex}}" bindinput="onConsultationLine" />
+                <view class="meta">来源：{{item.sourceIds}}</view>
+              </view>
+            </checkbox-group>
+          </view>
+          <view class="label">资料缺口（每行一条）</view>
+          <textarea class="textarea compact-textarea" value="{{consultationGapsText}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="3000" data-field="gaps" bindinput="onConsultationHeader" />
+          <view class="label">希望对方回答</view>
+          <checkbox-group data-field="questions" bindchange="onConsultationIncluded">
+            <view wx:for="{{consultationQuestionLines}}" wx:key="sourceIndex" class="record-line">
+              <label class="line-toggle"><checkbox value="{{item.sourceIndex}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留问题</label>
+              <textarea class="textarea compact-textarea" value="{{item.text}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="1200" data-field="questions" data-index="{{item.sourceIndex}}" bindinput="onConsultationLine" />
+              <view class="meta">来源：{{item.sourceIds}}</view>
+            </view>
+          </checkbox-group>
+        </block>
+        <block wx:else>
+          <view class="meta review-help">每条回复可仅留档、忽略或转为待选预案。采纳整理不会把回复标记为负责人已采纳，也不会自动发送、发布或批准方案。</view>
+          <view wx:for="{{consultationMappings}}" wx:key="mappingId" class="observation-card">
+            <view class="item-title">{{item.question}}</view>
+            <view class="meta">回复来源：{{item.sourceIds}}</view>
+            <view class="review-grid">
+              <view><view class="label">人工处置</view><picker range="{{consultationDispositionOptions}}" range-key="label" value="{{item.dispositionIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" bindchange="onConsultationDisposition"><view class="picker compact-picker">{{item.dispositionLabel}} ▾</view></picker></view>
+              <view><view class="label">回答状态</view><picker range="{{consultationStatusOptions}}" range-key="label" value="{{item.statusIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" bindchange="onConsultationStatus"><view class="picker compact-picker">{{item.statusLabel}} ▾</view></picker></view>
+            </view>
+            <view class="label">回复摘要</view>
+            <textarea class="textarea compact-textarea" value="{{item.summary}}" disabled="{{readOnly || selected.decision !== 'pending' || item.disposition === 'ignored'}}" maxlength="2000" data-index="{{index}}" data-field="summary" bindinput="onConsultationMappingField" />
+            <view class="label">适用条件（每行一条）</view>
+            <textarea class="textarea compact-textarea" value="{{item.conditionsText}}" disabled="{{readOnly || selected.decision !== 'pending' || item.disposition === 'ignored'}}" maxlength="2000" data-index="{{index}}" data-field="conditionsText" bindinput="onConsultationMappingField" />
+            <view class="label">冲突点（每行一条）</view>
+            <textarea class="textarea compact-textarea" value="{{item.conflictsText}}" disabled="{{readOnly || selected.decision !== 'pending' || item.disposition === 'ignored'}}" maxlength="2000" data-index="{{index}}" data-field="conflictsText" bindinput="onConsultationMappingField" />
+            <view class="label">待追问（每行一条）</view>
+            <textarea class="textarea compact-textarea" value="{{item.followUpsText}}" disabled="{{readOnly || selected.decision !== 'pending' || item.disposition === 'ignored'}}" maxlength="2000" data-index="{{index}}" data-field="followUpsText" bindinput="onConsultationMappingField" />
+            <block wx:if="{{item.disposition === 'proposal'}}">
+              <view class="label">转入哪个问题</view>
+              <picker range="{{consultationIssueOptions}}" range-key="title" value="{{item.issueIndex}}" disabled="{{readOnly || selected.decision !== 'pending'}}" data-index="{{index}}" bindchange="onConsultationIssue"><view class="picker compact-picker">{{consultationIssueOptions[item.issueIndex].title}} ▾</view></picker>
+              <view class="label">待选预案内容</view>
+              <textarea class="textarea compact-textarea" value="{{item.proposalContent}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="4000" data-index="{{index}}" data-field="proposalContent" bindinput="onConsultationMappingField" />
+            </block>
+          </view>
+          <view wx:if="{{selected.result.consultation.gaps.length}}" class="unknown-box">
+            <view class="label">回复仍未覆盖</view>
+            <view wx:for="{{selected.result.consultation.gaps}}" wx:key="*this" class="finding">• {{item}}</view>
+          </view>
+        </block>
+        <view class="label">人工复核说明</view>
+        <textarea class="textarea compact-textarea" value="{{consultationNote}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="4000" data-field="note" bindinput="onConsultationHeader" placeholder="补充选择原因；全部忽略时请说明仅留档理由" />
+      </view>
+      <view wx:if="{{selected.result.budget}}" class="task-review">
+        <view class="section-title">预算与资源配置 · 参数确认</view>
+        <view class="meta review-help">AI 只提取参数，不负责算术。负责人勾选并确认后，由本地整数精度规则计算、保存估算版本；不会创建采购单、批准费用或付款。</view>
+        <view class="original-value">估算目的：{{selected.result.budget.goal}}</view>
+        <checkbox-group bindchange="onBudgetIncluded">
+          <view wx:for="{{budgetScenarioItems}}" wx:key="scenarioId" class="observation-card">
+            <label class="line-toggle"><checkbox value="{{item.scenarioId}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />纳入本次估算版本</label>
+            <view class="original-value">AI 参数状态：{{item.originalSummary}}</view>
+            <view wx:if="{{item.materialSourceId}}" class="meta">关联项目材料：{{item.materialSourceId}}。材料关联不可在复核时改绑；如需改绑，请重新分析。</view>
+            <view class="label">方案名称</view>
+            <input class="input" value="{{item.label}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="120" data-index="{{index}}" data-field="label" bindinput="onBudgetField" />
+            <view class="review-grid">
+              <view><view class="label">工程需求量</view><input class="input" type="digit" value="{{item.requiredQuantity}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" data-index="{{index}}" data-field="requiredQuantity" bindinput="onBudgetField" placeholder="最多 3 位小数" /></view>
+              <view><view class="label">统一计算单位</view><input class="input" value="{{item.unit}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="30" data-index="{{index}}" data-field="unit" bindinput="onBudgetField" placeholder="如 片、箱、卷" /></view>
+            </view>
+            <view class="review-grid">
+              <view><view class="label">损耗率（%）</view><input class="input" type="digit" value="{{item.wasteRatePercent}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" data-index="{{index}}" data-field="wasteRatePercent" bindinput="onBudgetField" placeholder="0–100，最多 1 位小数" /></view>
+              <view><view class="label">需求量的损耗口径</view><picker range="{{budgetWasteOptions}}" range-key="label" value="{{item.wasteIndex}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" data-index="{{index}}" bindchange="onBudgetWasteMode"><view class="picker compact-picker">{{item.wasteLabel}} ▾</view></picker></view>
+            </view>
+            <view class="review-grid">
+              <view><view class="label">每包数量</view><input class="input" type="digit" value="{{item.packageSize}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" data-index="{{index}}" data-field="packageSize" bindinput="onBudgetField" placeholder="同一计算单位" /></view>
+              <view><view class="label">每包单价（元，可留空）</view><input class="input" type="digit" value="{{item.packageUnitPriceYuan}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" data-index="{{index}}" data-field="packageUnitPriceYuan" bindinput="onBudgetField" placeholder="留空=价格未知；0=明确为零" /></view>
+            </view>
+            <view class="label">人工说明</view>
+            <textarea class="textarea compact-textarea" value="{{item.note}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="2000" data-index="{{index}}" data-field="note" bindinput="onBudgetField" placeholder="记录采用假设、报价范围或单位口径" />
+            <view wx:if="{{item.previewError}}" class="unknown-box">{{item.previewError}}</view>
+            <view wx:else class="estimate-preview">
+              <view class="finding">{{item.totalLabel}}</view>
+              <view class="finding">{{item.gapLabel}}</view>
+              <view class="finding">{{item.purchaseLabel}}</view>
+              <view wx:if="{{item.warningLabel}}" class="meta">待补：{{item.warningLabel}}</view>
+            </view>
+          </view>
+        </checkbox-group>
+        <view wx:if="{{selected.result.budget.ledgerNotes.length}}" class="review-block">
+          <view class="label">所选账本事实（不合并报价、批准与付款口径）</view>
+          <view wx:for="{{selected.result.budget.ledgerNotes}}" wx:key="index" class="finding">{{item.text}}<view class="meta">来源：{{item.sourceIds}}</view></view>
+        </view>
+        <view wx:if="{{selected.result.budget.gaps.length}}" class="unknown-box">
+          <view class="label">整体资料缺口</view>
+          <view wx:for="{{selected.result.budget.gaps}}" wx:key="*this" class="finding">• {{item}}</view>
+        </view>
+        <view class="label">估算版本说明</view>
+        <textarea class="textarea compact-textarea" value="{{budgetNote}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="4000" bindinput="onBudgetNote" placeholder="说明比较范围、暂未采用的方案或后续需补的报价" />
+      </view>
+      <view wx:if="{{selected.result.projectSummary}}" class="task-review">
+        <view class="section-title">项目总结与交接 · 人工定稿</view>
+        <view class="meta review-help">AI 只生成有来源的草稿。负责人可逐节改写和取舍；保存后形成一个独立报告版本，不会关闭问题、批准费用、发送或发布。</view>
+        <view class="label">报告标题</view>
+        <input class="input" value="{{summaryDraftTitle}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="120" data-field="title" bindinput="onSummaryReviewHeader" />
+        <view class="label">范围声明</view>
+        <textarea class="textarea compact-textarea" value="{{summaryScopeStatement}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="1200" data-field="scope" bindinput="onSummaryReviewHeader" />
+        <checkbox-group bindchange="onSummarySectionIncluded">
+          <view wx:for="{{summarySectionItems}}" wx:key="key" class="observation-card">
+            <label class="line-toggle"><checkbox value="{{item.key}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />纳入报告</label>
+            <view class="original-value">AI 原始：{{item.originalSummary}}</view>
+            <view class="label">分区标题</view>
+            <input class="input" value="{{item.title}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="120" data-index="{{index}}" data-field="title" bindinput="onSummarySectionField" />
+            <view class="label">负责人确认的内容</view>
+            <textarea class="textarea tall-textarea" value="{{item.content}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="8000" data-index="{{index}}" data-field="content" bindinput="onSummarySectionField" />
+          </view>
+        </checkbox-group>
+        <view class="label">交接清单</view>
+        <checkbox-group bindchange="onSummaryHandoffIncluded">
+          <view wx:for="{{summaryHandoffItems}}" wx:key="itemId" class="record-line">
+            <label class="line-toggle"><checkbox value="{{item.itemId}}" checked="{{item.included}}" disabled="{{readOnly || selected.decision !== 'pending'}}" color="#176b5b" />保留交接项</label>
+            <picker range="{{summaryHandoffStatusOptions}}" range-key="label" value="{{item.statusIndex}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" data-index="{{index}}" bindchange="onSummaryHandoffStatus"><view class="picker compact-picker">{{item.statusLabel}} ▾</view></picker>
+            <textarea class="textarea compact-textarea" value="{{item.text}}" disabled="{{readOnly || selected.decision !== 'pending' || !item.included}}" maxlength="2000" data-index="{{index}}" bindinput="onSummaryHandoffField" />
+            <view class="meta">模型来源：{{item.sourceIds.length ? item.sourceIds : '资料缺口项，无直接来源'}}</view>
+          </view>
+        </checkbox-group>
+        <view wx:if="{{selected.result.projectSummary.overallGaps.length}}" class="unknown-box">
+          <view class="label">跨分区资料缺口</view>
+          <view wx:for="{{selected.result.projectSummary.overallGaps}}" wx:key="*this" class="finding">• {{item}}</view>
+        </view>
+        <view class="label">负责人复核说明</view>
+        <textarea class="textarea compact-textarea" value="{{summaryNote}}" disabled="{{readOnly || selected.decision !== 'pending'}}" maxlength="4000" data-field="note" bindinput="onSummaryReviewHeader" placeholder="记录删改原因、交接口径或后续补充计划" />
+      </view>
+      <view class="label">原件与知识出处（任务创建时的版本）</view>
+      <view wx:for="{{citations}}" wx:key="id" class="citation"><view>{{item.title}}</view><view class="meta">{{item.id}}</view><text selectable>{{item.text}}</text></view>
+      <textarea wx:if="{{!readOnly && selected.decision === 'pending'}}" class="textarea" maxlength="4000" value="{{correction}}" bindinput="onCorrection" placeholder="补充整体说明，原始模型输出会保留" />
+      <view class="meta">当前决定：{{selected.decision}}。采纳分析不会批准费用或关闭事项。</view>
+      <view wx:if="{{applicationNotice}}" class="accepted-note">{{applicationNotice}}</view>
+      <view wx:if="{{!readOnly && selected.decision === 'pending'}}" class="buttons"><button class="secondary" disabled="{{busy}}" data-decision="dismissed" bindtap="decide">不采纳</button><button class="primary" disabled="{{busy}}" data-decision="accepted" bindtap="decide">保存复核并采纳</button></view>
+    </block>
+  </view>
+  <view wx:if="{{hasProject}}" class="section-head history-head"><view><view class="section-title">任务历史</view><view class="section-kicker">{{usageSummary}}；金额以供应商账单为准</view></view><view class="action-link" bindtap="refreshJobs">刷新</view></view>
+  <view wx:if="{{hasProject}}" class="job-card interactive-card" wx:for="{{jobs}}" wx:key="id" data-id="{{item.id}}" bindtap="openJob"><view class="row"><view class="job-title">{{item.label}}</view><view class="job-status {{item.statusClass}}">{{item.statusLabel}}</view></view><view class="meta job-meta">{{item.createdAt}}{{item.retryOfJobId ? ' · 原资料重试' : ''}}</view><view class="job-link">查看输入、结果与复核记录 ›</view></view>
+  <view wx:if="{{hasProject && !jobs.length}}" class="ai-history-empty">还没有 AI 任务。人工业务仍可正常使用。</view>
+  <view class="settings-link action-link" bindtap="openPersonalSettings">个人与模型设置 ›</view>
+</view>

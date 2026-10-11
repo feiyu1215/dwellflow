@@ -1,0 +1,45 @@
+<movable-area wx:if="{{!open}}" class="assist-area">
+  <movable-view class="assist-movable" direction="vertical" y="{{y}}" out-of-bounds="{{false}}" bindchange="onMove" catchtap="toggle">
+    <view class="side-trigger {{open ? 'open' : ''}}" aria-label="{{open ? '收起快捷导航' : '展开快捷导航'}}">
+      <view class="trigger-compass">
+        <view class="compass-ring"></view>
+        <view class="compass-needle"></view>
+        <view class="compass-axis axis-v"></view>
+        <view class="compass-axis axis-h"></view>
+      </view>
+    </view>
+  </movable-view>
+</movable-area>
+
+<view wx:if="{{open}}" class="dock-layer">
+  <view class="dock-dismiss" bindtap="close"></view>
+  <view class="half-dial" style="top:{{dialTop}}px" catchtap="noop" bindtouchstart="onDialStart" catchtouchmove="onDialMove" bindtouchend="onDialEnd" bindtouchcancel="onDialCancel">
+    <view class="dial-ticks" style="{{ticksStyle}}"></view>
+    <view class="dial-center"></view>
+
+    <view
+      class="dock-node {{item.visible ? 'visible' : ''}} {{item.selected ? 'selected' : ''}} {{item.current ? 'current' : ''}} {{item.kind === 'ai' ? 'ai-task' : ''}}"
+      wx:for="{{nodes}}"
+      wx:key="id"
+      style="{{item.style}}"
+      data-index="{{index}}"
+      data-action="{{item.action}}"
+      data-task="{{item.task || ''}}"
+      data-mode="{{item.mode || ''}}"
+      catchtap="tapNode"
+      aria-label="进入{{item.label}}"
+    >
+      <view class="dial-icon icon-{{item.icon}}">
+        <view></view><view></view><view></view><view></view>
+      </view>
+      <view wx:if="{{item.kind === 'ai'}}" class="task-spark"></view>
+    </view>
+
+    <view class="dock-caption">
+      <text class="caption-count">{{selectedPosition}} / {{nodes.length}}</text>
+      <text class="caption-label">{{selectedLabel}}</text>
+      <text class="caption-hint">{{selectedHint}}</text>
+    </view>
+    <view class="dock-tip"><text>拖动表盘切换</text><text>轻点蓝色图标进入</text></view>
+  </view>
+</view>

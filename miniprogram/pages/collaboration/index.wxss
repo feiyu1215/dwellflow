@@ -1,0 +1,25 @@
+.block-title { margin-top: 30rpx; }
+.no-project button { margin-top: 24rpx; }
+.local-note { background: #edf5f1; color: #356358; border-radius: 16rpx; padding: 18rpx 20rpx; margin-bottom: 22rpx; font-size: 24rpx; line-height: 1.6; }
+.block-title .section-title { margin-bottom: 0; }
+.item-title { font-weight: 700; }
+.item-meta { margin-top: 10rpx; }
+.danger-link { color: #9e3f2b; font-weight: 650; }
+.share-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 22rpx; }
+.small-button { line-height: 68rpx; font-size: 24rpx; padding: 0 18rpx; margin: 0; }
+.backup-title { margin-top: 34rpx; }
+.consultation-entry { display: flex; align-items: center; justify-content: space-between; }
+.consultation-entry .section-title { margin-bottom: 8rpx; }
+.entry-arrow { color: var(--green); font-size: 54rpx; }
+.backup-note { line-height: 1.65; }
+.backup-entry { display: flex; align-items: center; justify-content: space-between; }
+.button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 20rpx; }
+.button-grid button { margin: 0; font-size: 24rpx; padding: 0 16rpx; }
+.option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-bottom: 28rpx; }
+.check-option, .resource-option { background: #fff; border: 1rpx solid var(--line); border-radius: 14rpx; padding: 18rpx; }
+.resource-heading { font-weight: 700; margin: 22rpx 0 12rpx; }
+.resource-option { display: block; margin-bottom: 10rpx; }
+.switch-row { display: flex; justify-content: space-between; align-items: center; gap: 20rpx; margin: 28rpx 0; }
+.restore-note { line-height: 1.65; margin-bottom: 18rpx; }
+.paste-button { margin-bottom: 16rpx; }
+.backup-input { height: 300rpx; font-size: 22rpx; }

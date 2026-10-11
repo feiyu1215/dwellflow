@@ -1,0 +1,57 @@
+.summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12rpx; margin-bottom: 26rpx; }
+.summary-card { background: #fff; border: 1rpx solid var(--line); border-radius: 20rpx; padding: 22rpx 16rpx; }
+.summary-action { border-color: #cfe1d7; }
+.summary-edit { margin-top: 10rpx; color: var(--green); font-size: 21rpx; font-weight: 650; }
+.summary-number { font-size: 28rpx; font-weight: 750; margin-top: 10rpx; word-break: break-all; }
+.summary-wide { grid-column: 1 / -1; }
+.pending-number { color: var(--amber); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; background: #e9e9ee; padding: 6rpx; border-radius: 18rpx; margin-bottom: 24rpx; }
+.tab { text-align: center; color: var(--muted); padding: 18rpx; border-radius: 14rpx; }
+.tab-active { background: white; color: var(--ink); font-weight: 700; box-shadow: 0 4rpx 16rpx rgba(39,54,48,.07); }
+.button-row { margin-bottom: 22rpx; }
+.mini-button, .wide-button { margin: 0; }
+.wide-button { margin-bottom: 22rpx; }
+.item-title { font-weight: 700; max-width: 440rpx; }
+.balance { color: var(--green); font-weight: 750; }
+.material-detail { margin-top: 12rpx; }
+.material-card { position: relative; }
+.material-balance { margin-top: 18rpx; }
+.material-flow { margin-top: 12rpx; }
+.detail-link { color: var(--green); font-size: 24rpx; font-weight: 650; margin-top: 18rpx; }
+.estimate { background: #f2f0e9; border-radius: 12rpx; padding: 14rpx; margin-top: 16rpx; color: var(--muted); font-size: 24rpx; }
+.estimate-history { margin-bottom: 26rpx; }
+.estimate-heading { margin: 8rpx 2rpx 14rpx; }
+.estimate-disclaimer { padding: 16rpx 18rpx; margin-bottom: 16rpx; border-radius: 14rpx; background: #eef5f0; color: #3f6651; font-size: 23rpx; line-height: 1.6; }
+.estimate-version { border-color: #cfe1d7; }
+.estimate-author { margin-top: 10rpx; }
+.estimate-summary { margin-top: 16rpx; line-height: 1.6; }
+.estimate-scenario { margin-top: 18rpx; padding: 18rpx; border-radius: 14rpx; background: #f5f3ed; }
+.scenario-line { margin-top: 8rpx; }
+.scenario-purchase { margin-top: 10rpx; color: var(--green); font-weight: 680; line-height: 1.5; }
+.scenario-warning { margin-top: 10rpx; color: #94591d; font-size: 23rpx; line-height: 1.55; }
+.estimate-limit { margin: 12rpx 4rpx 0; line-height: 1.55; }
+.expense-amount { font-weight: 750; color: var(--green); }
+.budget-help { margin: -6rpx 0 24rpx; line-height: 1.6; }
+.cost-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12rpx; margin-top: 22rpx; }
+.cost-grid > view { background: #f5f3ed; border-radius: 14rpx; padding: 16rpx 12rpx; }
+.cost-number { font-weight: 720; margin-top: 7rpx; font-size: 25rpx; word-break: break-all; }
+.detail-sheet { max-height: 92vh; }
+.detail-heading { align-items: flex-start; }
+.cost-title { margin-bottom: 8rpx; max-width: 450rpx; }
+.cost-note { margin-top: 22rpx; padding: 18rpx; background: #f2f0e9; border-radius: 14rpx; color: var(--muted); line-height: 1.6; }
+.detail-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12rpx; margin-top: 24rpx; }
+.detail-summary > view { background: white; border: 1rpx solid var(--line); border-radius: 14rpx; padding: 16rpx 12rpx; }
+.detail-summary > view > view:last-child { margin-top: 6rpx; font-weight: 720; word-break: break-all; }
+.pending-banner { margin-top: 18rpx; padding: 18rpx; border-radius: 14rpx; background: var(--amber-soft); color: var(--warning); line-height: 1.55; }
+.detail-actions, .decision-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 14rpx; margin-top: 22rpx; }
+.action-button, .compact-button { margin: 0; }
+.compact-button { line-height: 68rpx; font-size: 24rpx; padding: 0 20rpx; }
+.fact-row { display: flex; justify-content: space-between; gap: 20rpx; padding: 18rpx 0; border-bottom: 1rpx solid var(--line); }
+.fact-title { font-weight: 680; line-height: 1.5; }
+.fact-amount { flex: none; color: var(--green); font-weight: 720; }
+.fact-card { background: white; border: 1rpx solid var(--line); border-radius: 18rpx; padding: 20rpx; margin-bottom: 16rpx; }
+.fact-meta { margin-top: 10rpx; }
+.refund-card { background: var(--surface-warm); }
+.refund-button { margin-top: 18rpx; line-height: 68rpx; font-size: 24rpx; }
+.inline-empty { padding: 22rpx; color: var(--muted); background: #f2f0e9; border-radius: 14rpx; }
+.form-tip { margin: -2rpx 0 24rpx; color: var(--muted); font-size: 24rpx; line-height: 1.65; }

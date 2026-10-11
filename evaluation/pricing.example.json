@@ -1,0 +1,8 @@
+{
+  "currency": "CNY",
+  "effectiveAt": "运行前填写官方价格生效日期",
+  "source": "运行前填写官方价格页面 URL",
+  "cacheHitInputPerMillion": null,
+  "cacheMissInputPerMillion": null,
+  "outputPerMillion": null
+}

@@ -1,0 +1,215 @@
+<view class="page material-page">
+  <view wx:if="{{material && showForm === 'manual-check'}}" class="manual-workbench">
+    <view class="material-topbar"><view class="back-link" bindtap="closeForm">‹ 材料</view><view class="topbar-title">人工核对</view><view class="topbar-space"></view></view>
+    <view class="manual-intro">
+      <view class="eyebrow">人工路径 · {{manualReceiptTitle}} · 无需 AI</view>
+      <view class="title">逐字段核对</view>
+      <view class="subtitle">每个判断保留批准值、现场值和来源；原始证据不会因选择而被改写。</view>
+      <view class="progress-rail" aria-label="人工核对进度"><view class="progress-step done"></view><view class="progress-step current"></view><view class="progress-step"></view><view class="progress-step"></view><view class="progress-step"></view></view>
+    </view>
+    <view class="manual-context"><view><view class="context-label">批准基线</view><view class="context-value">{{manualBaselineLabel}}</view></view><view><view class="context-label">到货证据</view><block wx:if="{{manualEvidenceLines.length}}"><view class="evidence-line" wx:for="{{manualEvidenceLines}}" wx:key="*this">{{item}}</view></block><view wx:else class="context-value muted">暂无已关联原件，只能记录观察值。</view></view></view>
+    <view class="manual-field formal" wx:for="{{manualFields}}" wx:key="key">
+      <view class="manual-field-head"><view><view class="field-number">0{{index + 1}}</view><view class="item-title">{{item.label}}</view></view><view class="pill {{item.conflict ? 'pill-red' : item.status === 'matches' ? 'pill-green' : 'pill-amber'}}">{{item.conflict ? '来源冲突' : item.statusLabel}}</view></view>
+      <view class="compare-grid"><view class="compare-cell"><view class="meta">批准值</view><view>{{item.expectedValue || '无正式基线'}}</view></view><view class="compare-cell live"><view class="meta">现场观察</view><input class="inline-input" data-index="{{index}}" value="{{item.observedValue}}" bindinput="onManualObserved" placeholder="未知可留空" /></view></view>
+      <input class="input note-input" data-index="{{index}}" value="{{item.note}}" bindinput="onManualNote" placeholder="补充来源或说明（可选）" />
+      <button class="conflict-button {{item.conflict ? 'active' : ''}}" data-index="{{index}}" bindtap="onManualConflict">{{item.conflict ? '冲突尚未解决：点击确认已采用单一值' : '存在多个来源值？标记冲突'}}</button>
+    </view>
+    <view class="manual-summary"><view class="label">核对摘要</view><textarea class="textarea" value="{{manualSummary}}" bindinput="onManualSummary" placeholder="例如：规格一致，数量少 1 卷；型号待补拍" /><view wx:if="{{hasManualConflict}}" class="error-note">仍有来源冲突，不能保存为确定核对记录。</view></view>
+    <view class="manual-action-dock"><button class="secondary" bindtap="closeForm">暂存返回</button><button class="primary" bindtap="submitManualCheck">保存人工核对记录</button></view>
+  </view>
+
+  <view wx:elif="{{material}}">
+    <view class="material-topbar"><view class="back-link" bindtap="returnToLedger">{{returnLabel}}</view><view class="topbar-title">材料工作台</view><view class="topbar-space"></view></view>
+    <view class="material-heading">
+      <view class="heading-line"><view class="eyebrow">{{material.id}}<text wx:if="{{focusReceipt}}"> · {{focusReceipt.title}}</text></view><view wx:if="{{focusReceipt}}" class="status-chip">{{focusReceipt.statusLabel}}</view></view>
+      <view class="title">{{material.name}}</view>
+      <view class="subtitle">先核对批准基线与到货证据，再决定人工处理或让 AI 整理草稿。</view>
+      <view wx:if="{{originLabel}}" class="origin-context"><view></view><text>{{originLabel}} · 材料仍按项目管理</text></view>
+      <view class="material-spec-line">{{material.specification || '规格待补'}} · 计划 {{material.plannedQuantity}} {{material.unit}}</view>
+      <view class="progress-rail" aria-label="材料核对进度"><view class="progress-step current"></view><view class="progress-step"></view><view class="progress-step"></view><view class="progress-step"></view><view class="progress-step"></view></view>
+    </view>
+    <view wx:if="{{readOnly}}" class="readonly-banner">项目已归档：材料约定、采购、到货核对和库存登记均为只读。</view>
+    <view wx:if="{{focusReceipt && !focusReceipt.canDecide && !readOnly}}" class="task-capsule" data-id="{{focusReceipt.id}}" bindtap="openAiCheck">
+      <view class="task-orbit"><view class="task-orbit-ring"></view><view class="task-orbit-dot"></view></view>
+      <view class="task-copy"><view class="task-title">可让 AI 整理到货核对草稿</view><view class="task-note">只读取当前材料、批准基线与已关联证据</view></view>
+      <view class="task-link">查看范围</view>
+    </view>
+    <view wx:if="{{focusReceipt}}" class="focus-workbench">
+      <view class="focus-evidence" bindtap="openFocusEvidence">
+        <image wx:if="{{focusReceipt.evidencePath}}" class="focus-image" src="{{focusReceipt.evidencePath}}" mode="aspectFill" />
+        <view wx:else class="focus-placeholder"><view class="evidence-placeholder-mark"><view></view></view><text>暂无可预览原件</text></view>
+        <view class="evidence-overlay">
+          <view class="evidence-title">到货标签与外包装</view>
+          <view class="evidence-meta-line">{{focusReceipt.evidenceLabel}}</view>
+          <view class="evidence-open">查看原件与关联 ›</view>
+        </view>
+      </view>
+      <view class="comparison-body">
+        <view class="comparison-heading"><view><view class="item-title">批准基线 vs 现场证据</view><view class="meta">{{focusReceipt.baselineLabel}}</view></view><view class="difference-label">{{focusReceipt.fieldSummary}}</view></view>
+        <view class="comparison-summary">
+          <view class="compare-side"><view class="compare-side-label">批准</view><view class="compare-side-value">{{focusReceipt.baselineTerms}}</view></view>
+          <view class="compare-side live"><view class="compare-side-label">现场来源</view><view class="compare-side-value">{{focusReceipt.evidenceLabel}}</view></view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{focusReceipt}}" class="attention-card" data-id="{{focusReceipt.id}}" bindtap="openManualCheck">
+      <view class="attention-icon">!</view><view class="attention-copy"><view class="attention-title">{{focusReceipt.canDecide ? '核对草稿等待负责人处理' : '字段仍待人工确认'}}</view><view class="attention-note">{{focusReceipt.fieldSummary}}；系统不会替你选择来源或推进库存。</view></view><view class="attention-link">处理</view>
+    </view>
+    <view wx:if="{{focusReceipt}}" class="object-section-head"><view class="section-title">逐字段对照</view><view class="section-kicker">批准值、现场值与状态分开呈现</view></view>
+    <view wx:if="{{focusReceipt}}" class="field-table field-deck">
+      <view class="field-row field-card {{item.tone}}" wx:for="{{focusReceipt.fieldRows}}" wx:key="key">
+        <view class="field-head"><view><view class="field-name">{{item.label}}</view><view class="field-source">来源：{{focusReceipt.evidenceId || '人工观察待补'}}</view></view><view class="field-state">{{item.statusLabel}}</view></view>
+        <view class="value-pair"><view class="value-box"><view>批准值</view><text>{{item.expectedValue}}</text></view><view class="value-arrow">→</view><view class="value-box live"><view>现场值</view><text>{{item.observedValue}}</text></view></view>
+      </view>
+    </view>
+    <view wx:if="{{focusReceipt}}" class="object-facts">
+      <view class="object-section-head"><view class="section-title">对象事实</view><view class="section-kicker">来源与业务动作分离</view></view>
+      <view class="meta-table"><view class="meta-row"><text>到货批次</text><text>{{focusReceipt.id}}</text></view><view class="meta-row"><text>批准基线</text><text>{{focusReceipt.baselineLabel}}</text></view><view class="meta-row"><text>当前状态</text><text>{{focusReceipt.statusLabel}}</text></view><view class="meta-row"><text>库存变化</text><text>0 · 尚未确认入库</text></view></view>
+    </view>
+    <view wx:if="{{focusReceipt}}" class="check-boundary"><view></view><text><text class="boundary-strong">核对记录不是入库或付款。</text> 保存后仍不会批准材料替换、修改基线、增加库存或触发支付。</text></view>
+    <view wx:if="{{focusReceipt && !readOnly}}" class="focus-actions object-action-dock">
+      <button wx:if="{{focusReceipt.canDecide}}" class="secondary" data-id="{{focusReceipt.id}}" bindtap="openManualCheck">再次核对</button>
+      <button wx:if="{{focusReceipt.canDecide}}" class="primary" data-id="{{focusReceipt.id}}" data-check-id="{{focusReceipt.checkId}}" data-unresolved="{{focusReceipt.unresolved}}" data-pending-return="0" bindtap="openAllocation">负责人处理结果</button>
+      <button wx:else class="secondary ai-action" data-id="{{focusReceipt.id}}" bindtap="openAiCheck"><text>AI</text> 初审</button>
+      <button wx:if="{{!focusReceipt.canDecide}}" class="primary" data-id="{{focusReceipt.id}}" bindtap="openManualCheck">开始人工核对</button>
+    </view>
+    <view wx:if="{{!focusReceipt}}" class="material-empty-focus"><view class="empty-symbol"><view></view></view><view><view class="empty-title">还没有待核对到货</view><view class="meta">{{nextAction}}</view></view></view>
+    <view class="next-step"><view class="next-step-label">下一步</view><view>{{nextAction}}</view></view>
+
+    <view class="summary-grid compact-summary">
+      <view class="summary-card"><view class="meta">已下单</view><view class="summary-number">{{overview.ordered}} {{material.unit}}</view></view>
+      <view class="summary-card warning"><view class="meta">待核对</view><view class="summary-number">{{overview.pendingReview}} {{material.unit}}</view></view>
+      <view class="summary-card"><view class="meta">可用库存</view><view class="summary-number">{{overview.available}} {{material.unit}}</view></view>
+      <view class="summary-card warning"><view class="meta">待退货</view><view class="summary-number">{{overview.pendingReturn}} {{material.unit}}</view></view>
+    </view>
+
+    <view class="ledger-toggle" bindtap="toggleLedger"><view><view class="section-title">材料完整账本</view><view class="section-kicker">约定、采购、历史核对、到货与库存操作</view></view><view class="toggle-mark {{showLedger ? 'open' : ''}}">⌄</view></view>
+    <block wx:if="{{showLedger}}">
+    <view class="flow card">
+      <view class="section-title">正确顺序</view>
+      <view class="flow-row"><text>1 约定生效</text><text>2 登记采购</text><text>3 到货待核对</text></view>
+      <view class="flow-row"><text>4 确认可用</text><text>5 入库/领用</text><text>6 退货留痕</text></view>
+      <view class="meta flow-help">到货不会自动变成可用库存；没有生效约定时仍能记录事实，但不能显示“符合约定”。</view>
+    </view>
+
+    <view class="row section-head">
+      <view class="section-title">约定版本</view>
+      <view wx:if="{{!readOnly}}" class="action-link" bindtap="openAgreement">＋ 新建约定</view>
+    </view>
+    <view wx:if="{{agreements.length}}">
+      <view class="card" wx:for="{{agreements}}" wx:key="id">
+        <view class="row"><view class="item-title">{{item.title}} · v{{item.revision}}</view><view class="pill {{item.status === 'active' ? 'pill-green' : 'pill-amber'}}">{{item.statusLabel}}</view></view>
+        <view class="agreement-terms">{{item.terms}}</view>
+        <view class="button-row" wx:if="{{!readOnly && (item.canSubmit || item.canApprove)}}">
+          <button wx:if="{{item.canSubmit}}" class="secondary compact" data-id="{{item.id}}" data-version-id="{{item.versionId}}" bindtap="submitAgreement">提交负责人确认</button>
+          <button wx:if="{{item.canApprove}}" class="primary compact" data-id="{{item.id}}" data-version-id="{{item.versionId}}" bindtap="approveAgreement">负责人批准生效</button>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty card">可先记录到货事实；若需要判断型号、数量或规格是否一致，请先建立并批准约定。</view>
+
+    <view class="row section-head">
+      <view class="section-title">采购与到货</view>
+      <view wx:if="{{!readOnly}}" class="head-actions"><text class="action-link" bindtap="openPurchase">＋ 采购</text><text class="action-link" bindtap="openReceipt">＋ 到货</text></view>
+    </view>
+    <view wx:if="{{purchases.length}}">
+      <view class="card" wx:for="{{purchases}}" wx:key="id">
+        <view class="row"><view class="item-title">{{item.title}}</view><view class="pill">{{item.statusLabel}}</view></view>
+        <view class="meta detail">{{item.agreementLabel}}</view>
+        <view class="progress">{{item.progress}}</view>
+        <view class="meta detail">{{item.pending}}</view>
+      </view>
+    </view>
+    <view wx:else class="empty card">登记计划采购量后，可以按批次记录真实到货。</view>
+
+    <view wx:if="{{checks.length}}">
+      <view class="section-title receipt-heading">材料核对记录</view>
+      <view class="card check-card" wx:for="{{checks}}" wx:key="id">
+        <view class="row"><view class="item-title">{{item.title}}</view><view class="pill {{item.differenceCount ? 'pill-amber' : 'pill-green'}}">{{item.differenceCount ? item.differenceCount + ' 项差异' : '无已确认差异'}}</view></view>
+        <view class="meta detail">{{item.meta}}</view>
+        <view class="check-summary">{{item.summary}}</view>
+        <view class="check-line" wx:for="{{item.fieldLines}}" wx:key="*this">{{item}}</view>
+        <view class="meta check-boundary">这是核对记录，不代表材料已经入库、退货或完成真伪鉴定。</view>
+      </view>
+    </view>
+
+    <view class="section-title receipt-heading">到货批次</view>
+    <view wx:if="{{receipts.length}}">
+      <view class="card" wx:for="{{receipts}}" wx:key="id">
+        <view class="row"><view class="item-title">{{item.title}}</view><view class="pill {{item.statusLabel === '已处理' ? 'pill-green' : 'pill-amber'}}">{{item.statusLabel}}</view></view>
+        <view class="meta detail">{{item.detail}}</view>
+        <view class="receipt-numbers">待核对 {{item.unresolved}} · 待退 {{item.pendingReturn}} {{material.unit}}</view>
+        <view wx:if="{{!readOnly && (item.canAllocate || item.canAiCheck)}}" class="receipt-actions">
+          <button wx:if="{{item.canAiCheck}}" class="primary compact" data-id="{{item.id}}" bindtap="openManualCheck">开始人工核对</button>
+          <button wx:if="{{item.canAiCheck}}" class="secondary compact" data-id="{{item.id}}" bindtap="openAiCheck">AI 初审</button>
+          <button wx:if="{{item.canAllocate && (item.hasCheck || item.pendingReturn !== '0')}}" class="primary compact" data-id="{{item.id}}" data-check-id="{{item.checkId}}" data-unresolved="{{item.unresolved}}" data-pending-return="{{item.pendingReturn}}" bindtap="openAllocation">{{item.hasCheck ? '处理核对结果' : '登记完成退货'}}</button>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty card">还没有到货批次。</view>
+
+    <view class="inventory-next card">
+      <view class="section-title">库存后续动作</view>
+      <view class="meta">只针对已经确认可用的库存，领用、损耗和盘点分别留痕。</view>
+      <button wx:if="{{!readOnly}}" class="secondary inventory-button" bindtap="openInventory">登记领用、损耗或盘点</button>
+    </view>
+    </block>
+  </view>
+  <view wx:else class="empty card">
+    <view class="empty-title">材料不存在或不属于当前项目</view>
+    <view class="meta">返回材料列表重新选择，避免把其他项目的数据带入当前操作。</view>
+    <button class="secondary back-button" bindtap="returnToLedger">返回材料费用</button>
+  </view>
+
+  <view wx:if="{{showForm && showForm !== 'manual-check' && !readOnly}}" class="sheet-mask" bindtap="closeForm">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeForm">关闭</view></view>
+
+      <block wx:if="{{showForm === 'agreement'}}">
+        <view class="section-title">新建约定草稿</view>
+        <view class="label">标题</view><input class="input" value="{{agreementTitle}}" bindinput="onAgreementTitle" />
+        <view class="label">品牌 / 型号 / 规格</view><input class="input" value="{{agreementSpecification}}" bindinput="onAgreementSpecification" placeholder="可以暂时留空" />
+        <view class="label">约定数量（{{material.unit}}）</view><input class="input" type="digit" value="{{agreementQuantity}}" bindinput="onAgreementQuantity" />
+        <view class="label">施工或验收要求</view><textarea class="textarea" value="{{agreementNote}}" bindinput="onAgreementNote" placeholder="例如使用位置、色号、允许偏差" />
+        <view class="label">来源说明</view><input class="input" value="{{agreementSource}}" bindinput="onAgreementSource" placeholder="例如合同第 3 页、本人确认或商家回复" />
+        <button class="primary" bindtap="submitAgreementDraft">保存草稿</button>
+      </block>
+
+      <block wx:if="{{showForm === 'purchase'}}">
+        <view class="section-title">登记采购</view>
+        <view class="meta form-help">保存时自动绑定当前生效约定；如果尚无生效约定，会明确标记。</view>
+        <view class="label">下单数量（{{material.unit}}）</view><input class="input" type="digit" value="{{purchaseQuantity}}" bindinput="onPurchaseQuantity" placeholder="最多三位小数" />
+        <button class="primary" bindtap="submitPurchase">保存采购行</button>
+      </block>
+
+      <block wx:if="{{showForm === 'receipt'}}">
+        <view class="section-title">登记一批到货</view>
+        <view class="label">关联采购</view>
+        <picker mode="selector" range="{{purchases}}" range-key="title" value="{{receiptPurchaseIndex}}" bindchange="onReceiptPurchase"><view class="picker">{{purchases[receiptPurchaseIndex].title}}</view></picker>
+        <view class="label">现场实到数量</view><input class="input" type="digit" value="{{receiptQuantity}}" bindinput="onReceiptQuantity" placeholder="登记后先进入待核对" />
+        <button class="primary" bindtap="submitReceipt">保存到货事实</button>
+      </block>
+
+      <block wx:if="{{showForm === 'allocation'}}">
+        <view class="section-title">负责人处理核对结果</view>
+        <view wx:if="{{selectedCheckId}}" class="decision-source">依据核对记录 {{selectedCheckId}}</view>
+        <view class="label">处理方式</view>
+        <picker mode="selector" range="{{allocationActions}}" range-key="label" value="{{allocationActionIndex}}" bindchange="onAllocationAction"><view class="picker">{{allocationActions[allocationActionIndex].label}}</view></picker>
+        <view class="label">本次处理数量（{{material.unit}}）</view><input class="input" type="digit" value="{{allocationQuantity}}" bindinput="onAllocationQuantity" />
+        <view class="meta form-help">这是核对之后的独立决定。确认可用会生成库存入库事件；标记待退不会进入可用库存；核对记录本身保持不变。</view>
+        <button class="primary" bindtap="submitAllocation">负责人确认本次处理</button>
+      </block>
+
+      <block wx:if="{{showForm === 'inventory'}}">
+        <view class="section-title">登记库存事实</view>
+        <view class="label">动作</view>
+        <picker mode="selector" range="{{inventoryActions}}" range-key="label" value="{{inventoryActionIndex}}" bindchange="onInventoryAction"><view class="picker">{{inventoryActions[inventoryActionIndex].label}}</view></picker>
+        <view class="label">数量（{{material.unit}}）</view><input class="input" type="digit" value="{{inventoryQuantity}}" bindinput="onInventoryQuantity" />
+        <view class="label">原因 / 使用位置</view><input class="input" value="{{inventoryReason}}" bindinput="onInventoryReason" placeholder="盘点调整必须填写原因" />
+        <button class="primary" bindtap="submitInventory">保存库存事实</button>
+      </block>
+      <button class="text-button" bindtap="closeForm">取消</button>
+    </view>
+  </view>
+  <ai-assistant wx:if="{{material && !showForm}}" project-id="{{projectId}}" project-name="{{projectName}}" context-type="material" context-label="{{material.name}}" object-id="{{material.id}}" material-id="{{material.id}}" receipt-id="{{focusReceipt ? focusReceipt.id : ''}}"></ai-assistant>
+</view>

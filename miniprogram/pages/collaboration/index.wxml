@@ -1,0 +1,106 @@
+<view class="page">
+  <view class="utility-header">
+    <view class="eyebrow">负责人控制范围</view>
+    <view class="title">协作与分享</view>
+    <view class="subtitle">{{hasProject ? projectName + ' · 成员按范围参与；对外分享只复制创建当时明确选择的资料。' : '先选择项目，再管理参与范围和固定资料。'}}</view>
+  </view>
+  <view wx:if="{{!hasProject}}" class="empty card no-project">
+    <view>当前没有可用项目。</view>
+    <button class="primary" bindtap="manageProject">选择或创建项目</button>
+  </view>
+
+  <block wx:if="{{hasProject}}">
+    <view wx:if="{{readOnly}}" class="readonly-banner">项目已归档：成员与分享权限不能再变更；项目备份仍可导出，旧分享可继续复制至到期。</view>
+    <view wx:else class="local-note">当前版本记录参与者及其权限范围，不会向对方发送邀请或创建线上账号。</view>
+
+    <view class="card consultation-entry interactive-card" bindtap="openConsultation">
+    <view>
+      <view class="section-title">外部咨询与回复</view>
+      <view class="meta">限定资料形成固定咨询版本，回填转述或成员意见，再由负责人决定是否转为预案。</view>
+    </view>
+    <view class="entry-arrow">›</view>
+    </view>
+
+    <view class="row block-title">
+    <view class="section-title">项目成员</view>
+    <view wx:if="{{!readOnly}}" class="action-link" bindtap="openMember">＋ 添加</view>
+    </view>
+    <view wx:if="{{members.length}}">
+    <view class="card" wx:for="{{members}}" wx:key="id">
+      <view class="row">
+        <view><view class="item-title">{{item.name}}</view><view class="meta item-meta">{{item.meta}}</view></view>
+        <view wx:if="{{item.active && !readOnly}}" class="danger-link" data-id="{{item.id}}" bindtap="revokeMember">撤销</view>
+        <view wx:elif="{{item.active}}" class="pill pill-green">有效</view>
+        <view wx:else class="pill">已撤销</view>
+      </view>
+    </view>
+    </view>
+    <view wx:else class="empty card">负责人可记录家人或外部协作者的参与范围，并分别标注记录、待办、材料和费用权限。</view>
+
+    <view class="row block-title">
+    <view class="section-title">资料快照</view>
+    <view wx:if="{{!readOnly}}" class="action-link" bindtap="openShare">＋ 创建</view>
+    </view>
+    <view wx:if="{{shares.length}}">
+    <view class="card" wx:for="{{shares}}" wx:key="id">
+      <view class="row"><view class="item-title">{{item.title}}</view><view class="pill {{item.active ? 'pill-green' : ''}}">{{item.statusLabel}}</view></view>
+      <view class="meta item-meta">{{item.meta}}</view>
+      <view wx:if="{{item.active}}" class="share-actions">
+        <button class="secondary small-button" data-id="{{item.id}}" bindtap="copyShare">复制只读摘要</button>
+        <button wx:if="{{!readOnly}}" class="danger small-button" data-id="{{item.id}}" bindtap="revokeShare">撤销分享</button>
+      </view>
+    </view>
+    </view>
+    <view wx:else class="empty card">分享快照不会自动加入后续新记录，也不会包含监控权限。</view>
+  </block>
+
+  <view class="section-title backup-title">备份与交接</view>
+  <view class="card backup-entry interactive-card" bindtap="openBackup">
+    <view>
+      <view class="item-title">可移植资料与恢复</view>
+      <view class="meta backup-note">把原件、业务数据、离线阅读页和表格一起生成；恢复时创建只读副本，旧权限不会复活。</view>
+    </view>
+    <view class="entry-arrow">›</view>
+  </view>
+
+  <view wx:if="{{hasProject && showForm && !readOnly}}" class="sheet-mask" bindtap="closeForm">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeForm">关闭</view></view>
+
+      <block wx:if="{{showForm === 'member'}}">
+        <view class="section-title">添加参与者</view>
+        <view class="label">显示名称</view>
+        <input class="input" value="{{memberName}}" bindinput="onMemberName" placeholder="例如：妈妈、工长李师傅" />
+        <view class="label">角色</view>
+        <picker mode="selector" range="{{roles}}" range-key="label" value="{{roleIndex}}" bindchange="onRole">
+          <view class="picker">{{roles[roleIndex].label}}</view>
+        </picker>
+        <view class="label">授权范围</view>
+        <checkbox-group class="option-grid" bindchange="onScopes">
+          <label wx:for="{{scopeOptions}}" wx:key="value" class="check-option">
+            <checkbox value="{{item.value}}" checked="{{item.checked}}" color="#176B5B" />{{item.label}}
+          </label>
+        </checkbox-group>
+        <button class="primary" bindtap="submitMember">添加成员</button>
+      </block>
+
+      <block wx:if="{{showForm === 'share'}}">
+        <view class="section-title">创建 7 天资料快照</view>
+        <view class="label">分享标题</view>
+        <input class="input" value="{{shareTitle}}" bindinput="onShareTitle" placeholder="例如：卫生间防水问题咨询" />
+        <checkbox-group bindchange="onResources">
+          <view class="resource-heading">记录</view>
+          <label wx:for="{{recordOptions}}" wx:key="id" class="resource-option">
+            <checkbox value="{{item.value}}" color="#176B5B" />{{item.title}}
+          </label>
+          <view class="resource-heading">待办</view>
+          <label wx:for="{{issueOptions}}" wx:key="id" class="resource-option">
+            <checkbox value="{{item.value}}" color="#176B5B" />{{item.title}}
+          </label>
+        </checkbox-group>
+        <view class="switch-row"><view><view>允许另行发送原件</view><view class="meta">摘要本身不携带原件；实际发送请用下方“可移植资料”</view></view><switch checked="{{allowDownload}}" bindchange="onAllowDownload" color="#176B5B" /></view>
+        <button class="primary" bindtap="submitShare">创建不可变快照</button>
+      </block>
+    </view>
+  </view>
+</view>

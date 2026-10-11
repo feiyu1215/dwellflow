@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-09-27",
+  "purpose": "M6B 记录整理与图片观察内部基础评测；不是训练集，也不是工程质量验收标准。",
+  "sources": [
+    {
+      "id": "supervisely-cracks-synthetic",
+      "title": "Cracks Synthetic Dataset",
+      "publisher": "Supervisely",
+      "url": "https://github.com/supervisely-ecosystem/cracks-synthetic-dataset",
+      "license": "CC BY 4.0",
+      "status": "included_sample",
+      "usage": "纳入官方 README 展示的两张样例；逐文件署名见 samples/ATTRIBUTION.md。",
+      "uncertainty": "一张为合成墙面，一张验证图看起来是室外铺装；两者只验证可见现象、限制和补拍建议，不能代表家庭装修分布。"
+    },
+    {
+      "id": "hu-infrastructure-cracks-v2",
+      "title": "HU Infrastructure Cracks Dataset v2",
+      "publisher": "The Hashemite University / Zenodo",
+      "url": "https://doi.org/10.5281/zenodo.21010220",
+      "license": "CC BY 4.0（数据集页面声明）",
+      "status": "approved_candidate_not_downloaded",
+      "usage": "许可适合未来扩大真实墙面裂纹样本；当前 3.2GB 全量包对小样本阶段成本过高。",
+      "uncertainty": "2026 年新数据集，需在扩大评测前再次核对版本、文件级元数据和抽样去重。"
+    },
+    {
+      "id": "sdnet2018",
+      "title": "SDNET2018",
+      "publisher": "Utah State University / Clarkson University",
+      "url": "https://doi.org/10.15142/T3TD19",
+      "license": "论文为 CC BY 4.0；论文正文同时写明数据供 academic purposes",
+      "status": "metadata_only_license_review_required",
+      "usage": "只用于了解裂纹、阴影、粗糙表面、孔洞和杂物等覆盖维度，未复制数据文件。",
+      "uncertainty": "文章许可与数据使用措辞不完全一致，产品用途前需取得明确许可结论。"
+    },
+    {
+      "id": "deepcrack",
+      "title": "DeepCrack",
+      "publisher": "原论文作者仓库",
+      "url": "https://github.com/yhlleo/DeepCrack",
+      "license": "仅限非商业研究和教育用途",
+      "status": "excluded",
+      "usage": "不纳入项目文件或商业方向评测。",
+      "uncertainty": "部分原图版权与标注版权分开，且仓库明确限制用途。"
+    },
+    {
+      "id": "s2ds",
+      "title": "Structural Defects Dataset (S2DS)",
+      "publisher": "Bauhaus-Universität Weimar",
+      "url": "https://github.com/ben-z-original/s2ds",
+      "license": "仅学术使用，禁止商业使用和再分发",
+      "status": "excluded",
+      "usage": "只登记类别信息，不下载或再分发图片。",
+      "uncertainty": "仓库代码许可证不能覆盖 README 中更严格的数据条款。"
+    },
+    {
+      "id": "open-images-v7",
+      "title": "Open Images V7",
+      "publisher": "Google",
+      "url": "https://storage.googleapis.com/openimages/web/index.html",
+      "license": "标注 CC BY 4.0；图片列为 CC BY 2.0，但官方要求逐图复核",
+      "status": "candidate_per_image_review_required",
+      "usage": "未来可补充房间、材料和工具等普通场景，不把类别标注当作装修缺陷标签。",
+      "uncertainty": "官方不保证每张图片的许可证状态，纳入前必须保存作者、原始 URL 和单图许可。"
+    },
+    {
+      "id": "nyc-hpd-complaints-problems",
+      "title": "Housing Maintenance Code Complaints and Problems",
+      "publisher": "NYC OpenData / HPD",
+      "url": "https://data.cityofnewyork.us/d/ygpa-z7cr",
+      "license": "公开访问；本轮未复制个人投诉正文",
+      "status": "taxonomy_reference_only",
+      "usage": "只辅助覆盖漏水、墙面、供暖、维修等问题类型；AI01 样本正文由本项目重新编写。",
+      "uncertainty": "住房维护投诉与中国家庭装修过程记录不是同一分布，不能作为效果代表样本。"
+    },
+    {
+      "id": "china-community-ugc",
+      "title": "中国装修社区帖子与图片",
+      "publisher": "多个平台与用户",
+      "url": "",
+      "license": "未统一授权",
+      "status": "excluded_from_raw_collection",
+      "usage": "仅人工归纳常见问题类型，不批量抓取、复制图片、账号、地址或正文。",
+      "uncertainty": "著作权、平台条款和隐私风险高；后续如需要真实分布，优先征集明确授权的自有样本。"
+    }
+  ]
+}

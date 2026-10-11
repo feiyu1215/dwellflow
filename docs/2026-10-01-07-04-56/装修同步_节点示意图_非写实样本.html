@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>装修同步 · 节点标准示意图（非写实样本）</title>
+<style>
+  :root{
+    --bg:#F6F5F2; --surface:#FFFFFF; --ink:#1C1B19; --sub:#6F6B63;
+    --faint:#9C978E; --line:#E7E4DE; --accent:#0E7C66; --learned:#14B8A6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"PingFang SC","Noto Sans SC",system-ui,sans-serif;padding:40px 24px;}
+  .display{font-family:"Songti SC","Noto Serif SC",serif;font-weight:700;
+    font-size:34px;margin:0 0 8px;}
+  .sub{color:var(--sub);font-size:14px;line-height:1.7;max-width:640px;margin:0 0 32px;}
+  .grid{display:flex;flex-wrap:wrap;gap:24px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:20px;width:240px;box-shadow:0 8px 24px rgba(0,0,0,.04);}
+  .card img{width:120px;height:120px;display:block;margin:0 auto 12px;}
+  .card h3{font-size:16px;margin:0 0 4px;}
+  .card p{font-size:12px;color:var(--faint);margin:0;line-height:1.6;}
+  .legend{margin-top:36px;padding:20px;background:var(--surface);border:1px solid var(--line);
+    border-radius:16px;max-width:680px;font-size:13px;color:var(--sub);line-height:1.8;}
+  .legend b{color:var(--ink);}
+</style>
+</head>
+<body>
+  <h1 class="display">节点标准示意图 · 非写实样本</h1>
+  <p class="sub">
+    风格方向：<b>非写实 / 示意</b>，抽象几何即可，不依赖任何实景照片。<br/>
+    语言：绿线（#0E7C66）= 标准做法；墨线（#1C1B19）= 缺陷 / 问题；青点（#14B8A6）= AI 已学会。<br/>
+    空间定位感由 7×6 矩阵承载，不强制画户型图。
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <img src="节点示意_水电.svg" alt="水电"/>
+      <h3>水电</h3>
+      <p>水平水管（绿）+ 斜向电线（墨）交叉，交叉点为节点焦点。示意"水电路由"，非写实。</p>
+    </div>
+    <div class="card">
+      <img src="节点示意_防水.svg" alt="防水"/>
+      <h3>防水</h3>
+      <p>顶部落点（墨）= 水；中部实线（绿）= 防水层；下方虚线层 = 保护层。示意"隔水层"。</p>
+    </div>
+    <div class="card">
+      <img src="节点示意_泥瓦.svg" alt="泥瓦"/>
+      <h3>泥瓦</h3>
+      <p>瓷砖网格，其中一块以墨线加重 + 叉号 = 空鼓 / 缺损缺陷。示意"铺贴质量"。</p>
+    </div>
+  </div>
+
+  <div class="legend">
+    <b>下一步（待你确认风格后补齐）：</b><br/>
+    1. 全套节点：水电 / 防水 / 泥瓦 / 木工 / 油漆 / 安装 / 软装，统一此语言。<br/>
+    2. 每节点补<b>"合格样 + 常见缺陷样"一对</b>（文档第 1 节 #2 规定）。<br/>
+    3. 交付为独立 .svg（已存 节点示意_*.svg），可直接作小程序 image src，矢量无损。
+  </div>
+</body>
+</html>

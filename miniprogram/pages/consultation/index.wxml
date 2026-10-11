@@ -1,0 +1,174 @@
+<view class="page">
+  <view class="utility-header">
+    <view class="eyebrow">限定资料 · 主动外发 · 回复留痕</view>
+    <view class="title">外部咨询</view>
+    <view class="subtitle">{{hasProject ? projectName + ' · 对方不用安装本产品，也能通过你主动复制的资料包了解问题；回复由你注明来源后回填。' : '先选择项目，再整理限定资料和咨询问题。'}}</view>
+  </view>
+  <view wx:if="{{!hasProject}}" class="empty card"><view>当前没有可用项目。</view><button class="primary" bindtap="manageProject">选择或创建项目</button></view>
+  <view wx:if="{{hasProject && readOnly}}" class="readonly-banner">项目已归档：历史咨询和回复可查看，暂停修订、发布、回填与决定。</view>
+
+  <view wx:if="{{hasProject && !readOnly}}" class="action-grid create-actions">
+    <button class="primary small-action" bindtap="openCreate">＋ 新建咨询草稿</button>
+    <button class="secondary small-action" bindtap="openAiPrepare">AI 准备咨询草稿</button>
+  </view>
+  <view wx:if="{{hasProject && consultations.length}}">
+    <view class="card consultation-card interactive-card" wx:for="{{consultations}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+      <view class="row"><view class="item-title">{{item.title}}</view><view class="{{item.statusClass}}">{{item.statusLabel}}</view></view>
+      <view class="question">{{item.question}}</view>
+      <view class="meta">{{item.meta}}</view>
+    </view>
+  </view>
+  <view wx:elif="{{hasProject}}" class="empty card">需要向师傅、商家或专业人员咨询时，先明确问题、已知事实、缺口和需要回答的条目。</view>
+
+  <view wx:if="{{hasProject && selected && !showForm}}" class="sheet-mask" bindtap="closeDetail">
+    <view class="sheet detail-sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeDetail">关闭</view></view>
+      <view class="row">
+        <view class="section-title detail-title">{{selected.title}}</view>
+        <view class="{{selected.statusClass}}">{{selected.statusLabel}}</view>
+      </view>
+      <view class="question detail-question">{{selected.question}}</view>
+      <view class="meta">{{selected.meta}}</view>
+
+      <view wx:if="{{selected.knownFacts.length}}" class="content-group">
+        <view class="group-label">已知事实</view>
+        <view wx:for="{{selected.knownFacts}}" wx:for-item="line" wx:key="*this" class="line-item">• {{line}}</view>
+      </view>
+      <view wx:if="{{selected.gaps.length}}" class="content-group gap-box">
+        <view class="group-label">资料缺口</view>
+        <view wx:for="{{selected.gaps}}" wx:for-item="line" wx:key="*this" class="line-item">• {{line}}</view>
+      </view>
+      <view class="content-group">
+        <view class="group-label">希望对方回答</view>
+        <view wx:for="{{selected.answerQuestions}}" wx:for-item="line" wx:key="*this" class="line-item">{{index + 1}}. {{line}}</view>
+      </view>
+      <view class="content-group">
+        <view class="group-label">本次资料范围</view>
+        <view wx:for="{{selected.recordLabels}}" wx:for-item="line" wx:key="*this" class="line-item">记录 · {{line}}</view>
+        <view wx:for="{{selected.issueLabels}}" wx:for-item="line" wx:key="*this" class="line-item">问题 · {{line}}</view>
+      </view>
+
+      <view wx:if="{{!readOnly && selected.status !== 'closed'}}" class="action-grid">
+        <button class="secondary small-action" bindtap="openEdit">{{selected.hasDraft ? '编辑草稿' : '修订新版'}}</button>
+        <button wx:if="{{selected.hasDraft}}" class="primary small-action" bindtap="publish">发布固定版本</button>
+        <button wx:if="{{selected.hasActive}}" class="secondary small-action" bindtap="copyPackage">复制咨询资料包</button>
+        <button wx:if="{{selected.canRespond}}" class="secondary small-action" bindtap="openResponse">回填回复</button>
+        <button wx:if="{{selected.pendingResponseCount}}" class="secondary small-action" bindtap="openAiResponse">AI 整理待处理回复</button>
+        <button class="danger small-action" bindtap="openClose">结束咨询</button>
+      </view>
+      <view wx:elif="{{selected.hasActive}}" class="action-grid">
+        <button class="secondary small-action" bindtap="copyPackage">复制已发布资料包</button>
+      </view>
+      <view wx:if="{{selected.hasActive}}" class="copy-note">资料包是固定版本，不会自动加入后续记录。复制出去的内容无法远程收回；本机“结束咨询”只会阻止再次复制和回填。</view>
+
+      <view class="divider"></view>
+      <view class="section-title">外部回复</view>
+      <view wx:if="{{selected.responses.length}}">
+        <view class="response-card" wx:for="{{selected.responses}}" wx:key="id">
+          <view class="row"><view class="response-author">{{item.respondentName}}</view><view class="{{item.statusClass}}">{{item.statusLabel}}</view></view>
+          <view class="meta">{{item.sourceLabel}} · 收到于 {{item.receivedLabel}}</view>
+          <view class="original-text">原话：{{item.originalText}}</view>
+          <view wx:if="{{item.summary}}" class="summary-text">整理：{{item.summary}}</view>
+          <view wx:if="{{item.issueLabel}}" class="meta">关联问题：{{item.issueLabel}}</view>
+          <view wx:if="{{item.decisionReason}}" class="decision-text">负责人决定：{{item.decisionReason}}</view>
+          <view wx:if="{{item.status === 'pending' && !readOnly}}" class="response-actions">
+            <button wx:if="{{item.canConvert}}" class="primary mini-button" data-id="{{item.id}}" bindtap="convertResponse">转为待选预案</button>
+            <button class="secondary mini-button" data-id="{{item.id}}" bindtap="openDismiss">不采纳</button>
+          </view>
+        </view>
+      </view>
+      <view wx:else class="inline-empty">还没有回填回复。只读资料包不接收匿名评论。</view>
+
+      <view class="divider"></view>
+      <view class="section-title">版本历史</view>
+      <view class="version-row" wx:for="{{selected.versions}}" wx:key="id">
+        <view>v{{item.revision}} · {{item.statusLabel}}</view><view class="meta">{{item.timeLabel}}</view>
+      </view>
+      <view wx:if="{{selected.closedReason}}" class="closed-reason">结束原因：{{selected.closedReason}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{hasProject && showForm}}" class="sheet-mask action-mask" bindtap="closeForm">
+    <view class="sheet action-sheet" catchtap="noop">
+      <view class="sheet-toolbar"><view class="sheet-handle"></view><view class="sheet-close" bindtap="closeForm">关闭</view></view>
+
+      <block wx:if="{{showForm === 'consultation'}}">
+        <view class="section-title">{{editingId ? '修订咨询草稿' : '新建咨询草稿'}}</view>
+        <view class="label">咨询标题</view>
+        <input class="input" value="{{title}}" bindinput="onTitle" placeholder="例如：卫生间墙砖处理咨询" />
+        <view class="label">核心问题</view>
+        <textarea class="textarea short" value="{{question}}" bindinput="onQuestion" placeholder="这次最需要对方判断什么？" />
+        <view class="label">已知事实（每行一条）</view>
+        <textarea class="textarea short" value="{{knownFactsText}}" bindinput="onKnownFacts" placeholder="只写已经记录或确认的事实" />
+        <view class="label">资料缺口（每行一条）</view>
+        <textarea class="textarea short" value="{{gapsText}}" bindinput="onGaps" placeholder="例如：缺少现场尺寸、尚未复核" />
+        <view class="label">希望对方回答（每行一条）</view>
+        <textarea class="textarea short" value="{{answerQuestionsText}}" bindinput="onAnswerQuestions" placeholder="至少一条具体问题" />
+        <checkbox-group bindchange="onResources">
+          <view class="resource-heading">选定记录</view>
+          <label class="resource-option" wx:for="{{recordOptions}}" wx:key="value">
+            <checkbox value="{{item.value}}" checked="{{item.checked}}" color="#176B5B" />{{item.title}}
+          </label>
+          <view class="resource-heading">选定问题</view>
+          <label class="resource-option" wx:for="{{issueOptions}}" wx:key="value">
+            <checkbox value="{{item.value}}" checked="{{item.checked}}" color="#176B5B" />{{item.title}}
+          </label>
+        </checkbox-group>
+        <view class="form-tip">先保存草稿；负责人预览后再发布。发布不会自动发送消息。</view>
+        <button class="primary" bindtap="submitConsultation">保存草稿</button>
+      </block>
+
+      <block wx:elif="{{showForm === 'response'}}">
+        <view class="section-title">回填外部回复</view>
+        <view class="label">回复来源</view>
+        <picker mode="selector" range="{{responseSources}}" range-key="label" value="{{responseSourceIndex}}" bindchange="onResponseSource">
+          <view class="picker">{{responseSources[responseSourceIndex].label}}</view>
+        </picker>
+        <block wx:if="{{responseSourceIndex == 0}}">
+          <view class="label">声明作者</view>
+          <input class="input" value="{{respondentName}}" bindinput="onRespondentName" placeholder="例如：瓦工王师傅" />
+          <view class="label">沟通渠道</view>
+          <input class="input" value="{{responseChannel}}" bindinput="onResponseChannel" placeholder="例如：微信、电话、现场" />
+          <view class="label">回填人</view>
+          <input class="input" value="{{recordedBy}}" bindinput="onRecordedBy" />
+        </block>
+        <block wx:else>
+          <view class="label">填写成员</view>
+          <picker wx:if="{{memberOptions.length}}" mode="selector" range="{{memberOptions}}" range-key="name" value="{{memberIndex}}" bindchange="onMember">
+            <view class="picker">{{memberOptions[memberIndex].name}}</view>
+          </picker>
+          <view wx:else class="form-tip warning">当前没有具备“问题”范围的有效成员，请先在协作页添加。</view>
+          <view class="form-tip">本地版没有真实账号鉴权，只能作为同机体验；不能据此声称已验证本人身份。</view>
+        </block>
+        <view class="label">收到日期</view>
+        <picker mode="date" value="{{receivedDate}}" bindchange="onReceivedDate"><view class="picker">{{receivedDate}}</view></picker>
+        <view class="label">对方原话</view>
+        <textarea class="textarea" value="{{originalText}}" bindinput="onOriginalText" placeholder="尽量保留原始表达，不改写成对方批准" />
+        <view class="label">整理摘要（可空）</view>
+        <textarea class="textarea short" value="{{responseSummary}}" bindinput="onResponseSummary" placeholder="如需转成预案，将优先使用此摘要" />
+        <view class="label">关联本次咨询中的问题（可空）</view>
+        <picker mode="selector" range="{{targetIssueOptions}}" range-key="name" value="{{targetIssueIndex}}" bindchange="onTargetIssue">
+          <view class="picker">{{targetIssueOptions[targetIssueIndex].name}}</view>
+        </picker>
+        <button class="primary" bindtap="submitResponse">保存回复记录</button>
+      </block>
+
+      <block wx:elif="{{showForm === 'dismiss'}}">
+        <view class="section-title">不采纳这条回复</view>
+        <view class="label">负责人原因</view>
+        <textarea class="textarea" value="{{decisionReason}}" bindinput="onDecisionReason" placeholder="说明为什么不纳入处理预案" />
+        <button class="primary" bindtap="submitDismiss">记录决定</button>
+      </block>
+
+      <block wx:elif="{{showForm === 'close'}}">
+        <view class="section-title">结束咨询</view>
+        <view class="form-tip">结束后不能再次复制资料包或回填回复；已经复制到外部的内容无法远程收回。</view>
+        <view class="label">结束原因</view>
+        <textarea class="textarea" value="{{decisionReason}}" bindinput="onDecisionReason" placeholder="例如：已经收到足够意见" />
+        <button class="danger close-button" bindtap="submitClose">确认结束</button>
+      </block>
+
+      <button class="text-button" bindtap="closeForm">取消</button>
+    </view>
+  </view>
+</view>

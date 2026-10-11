@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>装修同步 · 为什么要一张空间图</title>
+<style>
+  :root{
+    --bg:#F6F5F2; --surface:#FFFFFF; --ink:#1C1B19;
+    --sub:#6F6B63; --faint:#9C978E; --line:#E7E4DE;
+    --accent:#0E7C66; --accent-soft:#E7F1ED; --learned:#14B8A6;
+    --warn:#B4462F; --warn-soft:#F7E6E1;
+    --hairline:1px solid rgba(0,0,0,.06);
+    --shadow:0 8px 24px rgba(0,0,0,.04);
+    --serif:"Songti SC","Noto Serif SC",serif;
+    --sans:"PingFang SC","Noto Sans SC",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.75;
+    padding:44px 20px 72px;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+
+  header{margin-bottom:36px}
+  .eyebrow{font-size:12px;letter-spacing:.18em;color:var(--faint);margin-bottom:10px}
+  h1{font-family:var(--serif);font-weight:700;font-size:38px;line-height:1.3;margin-bottom:14px}
+  .lede{font-size:16px;color:var(--sub);max-width:800px}
+  .lede b{color:var(--ink)}
+
+  .thesis{
+    background:var(--ink);color:#F6F5F2;border-radius:16px;
+    padding:26px 30px;margin:28px 0 34px;
+  }
+  .thesis p{font-size:17px;line-height:1.8;margin-bottom:10px}
+  .thesis p:last-child{margin-bottom:0}
+  .thesis b{color:#7FD3BE;font-weight:600}
+
+  .vs{display:grid;grid-template-columns:1fr 62px 1fr;gap:0;align-items:stretch}
+  .panel{
+    background:var(--surface);border:var(--hairline);
+    border-radius:16px;box-shadow:var(--shadow);padding:24px;
+  }
+  .panel__tag{
+    font-size:11px;letter-spacing:.14em;color:var(--faint);
+    margin-bottom:6px;
+  }
+  .panel__title{font-family:var(--serif);font-weight:700;font-size:20px;margin-bottom:4px}
+  .panel__sub{font-size:13px;color:var(--sub);margin-bottom:20px}
+  .mid{
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-size:15px;color:var(--faint);
+    letter-spacing:.1em;
+  }
+  .score{
+    margin-top:20px;padding-top:16px;border-top:var(--hairline);
+    display:flex;align-items:baseline;gap:10px;
+  }
+  .score__n{font-family:var(--serif);font-size:30px;font-weight:700;line-height:1}
+  .score__l{font-size:12.5px;color:var(--sub)}
+
+  /* 工序矩阵 */
+  .mx{display:grid;grid-template-columns:52px repeat(6,1fr);gap:5px}
+  .mx__h{font-size:10.5px;color:var(--faint);text-align:center;line-height:1.3}
+  .mx__r{font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+  .cell{aspect-ratio:1;border-radius:6px;background:var(--accent);position:relative}
+  .cell--off{background:var(--bg);border:1px dashed var(--line)}
+
+  /* 户型轴测 */
+  .plan{width:100%;height:auto;display:block;margin-bottom:4px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--sub);margin-top:14px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+  .blind{
+    margin-top:26px;background:var(--warn-soft);border-left:3px solid var(--warn);
+    border-radius:0 12px 12px 0;padding:20px 24px;
+  }
+  .blind h3{font-size:16px;font-weight:600;color:var(--warn);margin-bottom:8px}
+  .blind p{font-size:14.5px;color:var(--ink);margin-bottom:6px}
+  .blind p:last-child{margin-bottom:0}
+
+  section{
+    background:var(--surface);border:var(--hairline);
+    border-radius:16px;box-shadow:var(--shadow);
+    padding:28px;margin-bottom:22px;
+  }
+  h2{font-family:var(--serif);font-weight:700;font-size:23px;margin-bottom:8px}
+  h3{font-size:16px;font-weight:600;margin:22px 0 8px}
+  .note{font-size:13.5px;color:var(--faint);margin-top:16px;padding-top:14px;border-top:var(--hairline)}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+  th,td{text-align:left;padding:11px 12px;border-bottom:var(--hairline);vertical-align:top}
+  th{font-size:12.5px;color:var(--faint);font-weight:600}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--bg);padding:2px 6px;border-radius:4px}
+  ul{margin:8px 0 0 20px}
+  li{margin-bottom:6px}
+  footer{text-align:center;font-size:12.5px;color:var(--faint);margin-top:36px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">装修同步 · 空间图的唯一不可替代职责</div>
+    <h1>为什么需要一张空间图<br>——不是为了好看</h1>
+    <p class="lede">
+      这份东西<b>不使用任何素材</b>。户型就是矩形，符号自己画。
+      它要证明一件事：<b>矩阵看不见的那批漏查，只有空间图能看见。</b>
+    </p>
+  </header>
+
+  <div class="thesis">
+    <p><b>核心判断：工序覆盖率 ≠ 空间覆盖率。</b></p>
+    <p>矩阵按工序索引（七行：水电→防水→泥瓦…）。但装修不可逆——水电做错拆掉重做代价极大，用户真实的焦虑是<b>"我有没有漏掉哪一处"</b>，不是"七步做完了吗"。</p>
+    <p>这两种情况会分叉：<b>七个工序全部打勾，但某个房间压根没进去过。</b>矩阵在结构上看不见这个洞。</p>
+  </div>
+
+  <!-- 对比 -->
+  <div class="vs">
+    <!-- 左：工序视图 -->
+    <div class="panel">
+      <div class="panel__tag">视图 A</div>
+      <div class="panel__title">工序视图（7×6 矩阵）</div>
+      <div class="panel__sub">owner 定的交互三原语之一，不动</div>
+      <div id="mx"></div>
+      <div class="score">
+        <span class="score__n" style="color:var(--accent)">42 / 42</span>
+        <span class="score__l">工序节点 · <b>全绿</b></span>
+      </div>
+      <div class="note" style="margin-top:14px">
+        结论：<b>全部完成。</b>用户此刻的心理状态是"搞定了"。
+      </div>
+    </div>
+
+    <div class="mid">VS</div>
+
+    <!-- 右：空间视图 -->
+    <div class="panel">
+      <div class="panel__tag">视图 B</div>
+      <div class="panel__title">空间视图（按房间）</div>
+      <div class="panel__sub">同一批节点，换个索引方式统计</div>
+      <svg class="plan" id="plan" viewBox="0 0 460 340" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="legend">
+        <span><i style="background:#BFDDD2"></i>已巡完</span>
+        <span><i style="background:#F0D8D0;border:1.5px solid #B4462F"></i>未巡查</span>
+      </div>
+      <div class="score">
+        <span class="score__n" style="color:var(--warn)">62 / 71</span>
+        <span class="score__l">空间节点 · <b>9 个从没打开过</b></span>
+      </div>
+      <div class="note" style="margin-top:14px">
+        结论：<b>卫生间 0/9。</b>同一批节点，换个算法就翻案了。
+      </div>
+    </div>
+  </div>
+
+  <div class="blind">
+    <h3>矩阵看不见的洞，就在这里</h3>
+    <p>用户按工序做完了七步，界面全绿，于是以为搞定了。<b>但卫生间那 9 个节点他一个都没点开</b>——因为他不是按房间在追的，他是在按工序在追。</p>
+    <p>这个漏查在事后极其昂贵：卫生间防水没做，隔壁渗漏返工，砸砖重做。</p>
+    <p><b>所以空间图的第一职责不是"好看"、不是"有图"，是补这个数据盲区。</b><br>
+    判断标准很简单：一张空间图如果不能让用户发现"我漏了 XX"，它就是装饰，该删。</p>
+  </div>
+
+  <!-- 推论 -->
+  <section>
+    <h2>由此推出：素材需求极低</h2>
+    <p>一个事实——<b>户型图就是一组矩形。</b></p>
+    <p>三室一厅 = 一个大矩形 + 几道竖线 + 几道横线。不需要 3D 模型、不需要生成器、不需要下载素材。6～8 个常见户型手写 SVG 矩形，半天到一天就完事，改起来是改数字不是改图。</p>
+
+    <h3>真正值得从外面拿的，只有一类</h3>
+    <table>
+      <thead><tr><th style="width:26%">要什么</th><th style="width:32%">去哪拿</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>设备图例</b><br><span style="font-size:12.5px;color:var(--sub)">马桶 / 水槽 / 灶台 / 地漏 / 插座 / 水电点位</span></td>
+          <td>《建筑制图标准》里的<b>卫生设备图例</b>体系，或找现成施工图</td>
+          <td>让用户扫一眼认出"这是马桶"，而不是"这是个蓝方块"。<b>这个自己画容易画错，画错了会误导用户判断节点位置。</b></td>
+        </tr>
+        <tr>
+          <td><b>真实户型参考</b></td>
+          <td>链家 / 贝壳 任意房源页的户型图</td>
+          <td>校准我们手写矩形的户型是否合理、是否覆盖了常见户型。<b>比申请学术数据集快得多</b></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>所以这些一律不要</h3>
+    <ul>
+      <li><b>室内家具模型</b>（Quaternius 123 件、3D-FRONT 的 1.3 万件）——我们不画家具，家具是用户自己买的</li>
+      <li><b>3D 住宅高模</b>（gltf-research-scenes）——我们要平面，不做立面</li>
+      <li><b>CC0 游戏风轴测素材</b>（Kenney 等）——卡通 low-poly，是"迫不得已的兜底"，不是方向</li>
+      <li><b>现成的房间图</b>（SVGRepo / OpenGameArt 那些）——它们是"一张好看的房间图"，解决不了"我漏查了哪"</li>
+    </ul>
+
+    <div class="note">
+      一句话：<b>几何我们自己画（因为就是矩形），符号值得查一次标准（因为画错会误导人），家具一律不要。</b>
+    </div>
+  </section>
+
+  <!-- 空间图的三个岗位 -->
+  <section>
+    <h2>空间图在产品里到底有哪三个岗位</h2>
+    <p>一个图要有存在理由，得说清它在用户操作里顶哪一步。空间相关的图只有这三个岗位，我把优先级排开了：</p>
+    <table>
+      <thead><tr><th style="width:24%">岗位</th><th style="width:44%">是什么</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>① 补矩阵盲区</b></td>
+          <td>暴露"这个房间我压根没进去过"</td>
+          <td><b style="color:var(--accent)">唯一不可替代。必须做。</b></td>
+        </tr>
+        <tr>
+          <td><b>② 节点的空间归属</b></td>
+          <td>看"防水"节点时，知道它在厨房还是卫生间</td>
+          <td>不需要图。给一行文字 <code>位置：卫生间</code> 就够，别为一个字段做一整张图</td>
+        </tr>
+        <tr>
+          <td><b>③ 进房前的预期对齐</b></td>
+          <td>点"我要巡卫生间"之前，对这间房长什么样没有预期</td>
+          <td>可后置。而且第一张图是 <b>UGC</b>（他装修时拍的现场照），不是设计图。设计阶段不用管</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      三条合起来：<b>空间图的不可替代价值只有岗位①</b>。后面两个要么能用文字代替，要么是用户自己拍的照片。
+    </div>
+  </section>
+
+  <!-- 下一步 -->
+  <section>
+    <h2>下一步建议</h2>
+    <ul>
+      <li><b>① 先把上面这个洞做成真实交互</b>——不碰任何素材，让用户在空间视图里看到"卫生间 0/9"并被引导进去。这个洞抓不住，后面所有素材都白做。</li>
+      <li><b>② 顺手手写 6～8 个户型矩形</b>——半天的事，顺便验证"户型就是矩形"这个判断成不成立。</li>
+      <li><b>③ 然后去查设备图例标准</b>——这是唯一必须从外面拿的东西，要查准，别画错。</li>
+      <li><b>④ 素材库那些事等前三步做完再看还缺什么</b>，大概率会发现什么都不缺。</li>
+    </ul>
+  </section>
+
+  <footer>装修同步 · 2026-10-02 · 本页不使用任何外部素材</footer>
+</div>
+
+<script>
+/* 工序矩阵 7×6，全绿 */
+const PROC=['水电','防水','泥瓦','木工','油漆','安装','软装'];
+const MODS=['水电作业','泥瓦作业','木作','油漆','安装','收尾'];
+(function(){
+  let s='';
+  s+=`<div></div>`;
+  MODS.forEach(m=>s+=`<div class="mx__h">${m}</div>`);
+  PROC.forEach(p=>{
+    s+=`<div class="mx__r">${p}</div>`;
+    for(let i=0;i<6;i++) s+=`<div class="cell"></div>`;
+  });
+  document.getElementById('mx').innerHTML=s;
+})();
+
+/* 户型轴测 */
+const C30=Math.cos(Math.PI/6), S30=0.5;
+const iso=(x,y,S,ox,oy)=>[ox+(x-y)*C30*S, oy+(x+y)*S30*S];
+function box(x,y,w,h,hh,S,ox,oy){
+  const A=iso(x,y,S,ox,oy),B=iso(x+w,y,S,ox,oy),
+        C=iso(x+w,y+h,S,ox,oy), D=iso(x,y+h,S,ox,oy);
+  const dn=p=>[p[0],p[1]+hh];
+  return{
+    top:`M${A} L${B} L${C} L${D} Z`,
+    right:`M${B} L${C} L${dn(C)} L${dn(B)} Z`,
+    left:`M${D} L${C} L${dn(C)} L${dn(D)} Z`
+  };
+}
+const ROOMS=[
+  {name:'主卧', x:0,y:0,w:3,h:2, done:14,total:14},
+  {name:'次卧', x:3,y:0,w:3,h:2, done:13,total:13},
+  {name:'书房', x:0,y:2,w:2,h:2, done:8, total:8},
+  {name:'客厅', x:2,y:2,w:2,h:2, done:16,total:16},
+  {name:'厨房', x:4,y:2,w:2,h:2, done:11,total:11},
+  {name:'卫生间',x:4,y:0,w:2,h:2, done:0, total:9, blind:true}
+];
+(function(){
+  const S=44, ox=200, oy=64;
+  let s='';
+  [...ROOMS].sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(r=>{
+    const b=box(r.x,r.y,r.w,r.h,8,S,ox,oy);
+    const top   = r.blind ? '#F0D8D0' : '#BFDDD2';
+    const right = r.blind ? '#E4C3B8' : '#A8CFC0';
+    const left  = r.blind ? '#EDD0C6' : '#B4D6C8';
+    const stroke= r.blind ? '#B4462F' : '#8FB8A8';
+    const sw    = r.blind ? 2 : 1;
+    s+=`<path d="${b.right}" fill="${right}"/>`;
+    s+=`<path d="${b.left}"  fill="${left}"/>`;
+    s+=`<path d="${b.top}"   fill="${top}" stroke="${stroke}" stroke-width="${sw}"/>`;
+    if(r.blind){
+      // 打叉：没进去过
+      const c=iso(r.x+r.w/2,r.y+r.h/2,S,ox,oy);
+      s+=`<path d="M${c[0]-11} ${c[1]-11} L${c[0]+11} ${c[1]+11} M${c[0]+11} ${c[1]-11} L${c[0]-11} ${c[1]+11}"
+           stroke="#B4462F" stroke-width="2.4" stroke-linecap="round" fill="none"/>`;
+    }
+    const c=iso(r.x+r.w/2,r.y+r.h/2,S,ox,oy);
+    const ty = r.blind ? c[1]-4 : c[1];
+    s+=`<text x="${c[0]}" y="${ty}" text-anchor="middle" font-size="12.5"
+        font-family="PingFang SC,sans-serif" font-weight="600"
+        fill="${r.blind?'#8F3524':'#2A2825'}" style="pointer-events:none">${r.name}</text>`;
+    s+=`<text x="${c[0]}" y="${c[1]+13}" text-anchor="middle" font-size="10.5"
+        font-family="PingFang SC,sans-serif"
+        fill="${r.blind?'#B4462F':'#4A4740'}" style="pointer-events:none">${r.done}/${r.total}</text>`;
+  });
+  document.getElementById('plan').innerHTML=s;
+})();
+</script>
+</body>
+</html>
